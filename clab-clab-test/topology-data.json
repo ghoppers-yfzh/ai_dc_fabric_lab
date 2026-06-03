@@ -1,0 +1,101 @@
+{
+  "name": "clab-test",
+  "type": "clab",
+  "clab": {
+    "config": {
+      "prefix": "clab",
+      "mgmt": {
+        "network": "clab",
+        "bridge": "br-e66bfe1e0bb6",
+        "ipv4-subnet": "172.20.20.0/24",
+        "ipv4-gw": "172.20.20.1",
+        "ipv6-subnet": "3fff:172:20:20::/64",
+        "ipv6-gw": "3fff:172:20:20::1",
+        "external-access": true
+      }
+    }
+  },
+  "ssh-pub-keys": ["ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC1sNhlAqCtvzk3/cqlICdsSsan+zUrOB1/3fssJBOP/YLaqWdREwFDBfWJs0wNkqQqVUuSN6KKmDyNbGUispdi0C+Fo8XyvCHF10r4yzrzUVxxDBEnQ4SxL+3LfBysR/Nv+f+0YtUrEO4Lho0nnrk4fr4bcLKrnd9z7QRJWlwNqrLCaeqtHuGVgx4f91KbkK5+8mMBUrA4ZwMHAXVxW0n+xky73Wxm7Au2sAMvmBDHen5hu33wAosJAgnvAw9SlQHgRnNBGJmBe5YO2DtOzL20d4HvN7QFM3v+SeKfQfwSOQunsVIQDC2L4CS5WNLh8uOPsyfkDmfQ0Ov9EfKDDleh"],
+  "nodes": {
+    "a1": {
+      "index": "0",
+      "shortname": "a1",
+      "longname": "clab-clab-test-a1",
+      "fqdn": "a1.clab-test.io",
+      "group": "",
+      "labdir": "/home/yifan/ai_dc_fabric_lab/clab-clab-test/a1",
+      "kind": "linux",
+      "image": "alpine:3.18.4",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.2",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::2",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e66bfe1e0bb6",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/yifan/ai_dc_fabric_lab/clab-clab-test/a1",
+        "clab-node-longname": "clab-clab-test-a1",
+        "clab-node-name": "a1",
+        "clab-node-type": "",
+        "clab-owner": "yifan",
+        "clab-topo-file": "/home/yifan/ai_dc_fabric_lab/containerlab_init_test.clab.yml",
+        "containerlab": "clab-test"
+      },
+      "port-bindings": [
+      ]
+    },
+    "c1": {
+      "index": "1",
+      "shortname": "c1",
+      "longname": "clab-clab-test-c1",
+      "fqdn": "c1.clab-test.io",
+      "group": "",
+      "labdir": "/home/yifan/ai_dc_fabric_lab/clab-clab-test/c1",
+      "kind": "linux",
+      "image": "alpine:3.18.4",
+      "mgmt-net": "",
+      "mgmt-intf": "",
+      "mgmt-ipv4-address": "172.20.20.3",
+      "mgmt-ipv4-prefix-length": 24,
+      "mgmt-ipv6-address": "3fff:172:20:20::3",
+      "mgmt-ipv6-prefix-length": 64,
+      "mac-address": "",
+      "labels": {
+        "clab-mgmt-net-bridge": "br-e66bfe1e0bb6",
+        "clab-node-group": "",
+        "clab-node-kind": "linux",
+        "clab-node-lab-dir": "/home/yifan/ai_dc_fabric_lab/clab-clab-test/c1",
+        "clab-node-longname": "clab-clab-test-c1",
+        "clab-node-name": "c1",
+        "clab-node-type": "",
+        "clab-owner": "yifan",
+        "clab-topo-file": "/home/yifan/ai_dc_fabric_lab/containerlab_init_test.clab.yml",
+        "containerlab": "clab-test"
+      },
+      "port-bindings": [
+      ]
+    }
+  },
+  "links": [
+    {
+      "endpoints": {
+        "a": {
+          "node": "a1",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:b2:8a:37",
+          "peer": "z"
+        },
+        "z": {
+          "node": "c1",
+          "interface": "eth1",
+          "mac": "aa:c1:ab:f3:04:35",
+          "peer": "a"
+        }
+      }
+    }
+  ]
+}
