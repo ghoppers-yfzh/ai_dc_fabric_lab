@@ -1,0 +1,14 @@
+# Test topology for validate containerlab functions
+name: alpine-smoke-test
+
+topology:
+  nodes:
+    a1:
+      kind: linux
+      image: alpine:3.18.4
+    c1:
+      kind: linux
+      image: alpine:3.18.4
+      
+  links:
+    - endpoints: ["a1:eth1", "c1:eth1"]    
