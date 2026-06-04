@@ -6,9 +6,21 @@ Phase 1 builds the first real data center fabric lab in this repository.
 
 The goal is to create a reproducible 2-spine / 4-leaf / 4-host leaf-spine fabric using Containerlab and FRRouting.
 
-This phase is not a full AI GPU cluster simulation.
+This phase focuses on the eBGP underlay foundation:
 
-It does not test real:
+- topology design
+- IP addressing
+- ASN planning
+- FRR basics
+- one eBGP pair
+- full spine-leaf eBGP underlay
+- loopback reachability
+- ECMP validation
+- basic failure testing
+
+This phase does not implement EVPN/VXLAN yet.
+
+This phase does not test real:
 
 - RoCEv2
 - RDMA performance
@@ -17,27 +29,30 @@ It does not test real:
 - DCQCN
 - GPU workload behavior
 
-Those topics come later.
-
-The purpose of this phase is to build the data center fabric foundation that later AI infrastructure topics depend on.
+Those topics come after the underlay foundation is working and documented.
 
 ---
 
 ## 2. Why This Phase Matters
 
-AI data center networking still depends on strong data center networking fundamentals.
+A reliable data center fabric starts with a clean underlay.
 
-Before discussing RoCEv2, GPU cluster traffic, lossless Ethernet, or NVIDIA Spectrum-X, the engineer should be comfortable with:
+Before studying AI/GPU-specific networking topics, the basic fabric should be easy to build, explain, validate, and troubleshoot.
 
-- leaf-spine / Clos topology
-- eBGP underlay
-- loopback reachability
-- ECMP
-- failure domains
-- validation commands
-- reproducible lab documentation
+This phase builds the foundation for later topics such as:
 
-This phase connects directly to existing data center networking experience while preparing for AI/GPU infrastructure topics.
+- EVPN/VXLAN overlays
+- AI fabric requirements
+- RoCEv2 and lossless Ethernet concepts
+- SONiC
+- Cumulus Linux
+- automation and validation workflows
+
+The important idea is:
+
+```text
+Stable underlay first, advanced fabric topics later.
+```
 
 ---
 
@@ -47,8 +62,8 @@ The intended Phase 1 topology is:
 
 ```text
           spine1          spine2
-          /  |  \        /  |  \
-         /   |   \      /   |   \
+          / | | \\        / | | \\
+         /  | |  \\      /  | |  \\
       leaf1 leaf2 leaf3 leaf4
         |     |     |     |
       host1 host2 host3 host4
@@ -58,7 +73,7 @@ Device roles:
 
 | Role | Count | Purpose |
 |---|---:|---|
-| Spine | 2 | Fabric core / transit layer |
+| Spine | 2 | Fabric transit layer |
 | Leaf | 4 | Server-facing fabric edge |
 | Host | 4 | Linux test endpoints |
 
@@ -66,71 +81,103 @@ Main routing model:
 
 - eBGP between every spine and every leaf
 - loopbacks advertised through BGP
-- ECMP across spines
-- hosts connected to leaves for future overlay and reachability testing
+- ECMP across both spines
+- hosts connected to leaves for later reachability and overlay testing
 
----
-
-## 4. Learning-to-Lab Mapping
-
-| Module | Learning Topic | Lab Manual Stage | Main Artifact |
-|---|---|---|---|
-| Module 1 | Lab platform basics | Stage 0 — Platform validation | `labs/00-platform-validation/outputs/` |
-| Module 2 | Leaf-spine / Clos foundation | Stage 1 — Topology design | `topology.clab.yml` |
-| Module 3 | IP and ASN planning | Stage 2 — Addressing and ASN plan | `ip-plan.md`, `asn-plan.md` |
-| Module 4 | FRRouting basics | Stage 3 — FRR basic checks | `outputs/frr-basic-checks.md` |
-| Module 5 | One eBGP pair | Stage 4 — Configure `spine1 <-> leaf1` manually | `outputs/spine1-leaf1-bgp.md` |
-| Module 6 | Full eBGP underlay | Stage 5 — Configure all spine-leaf BGP sessions | `configs/`, `outputs/bgp-summary-all.txt` |
-| Module 7 | Loopback reachability and ECMP | Stage 6 — Route and ECMP validation | `outputs/loopback-ping-tests.txt`, `outputs/ecmp-checks.txt` |
-| Module 8 | Failure testing | Stage 7 — Link/spine/leaf failure | `failure-tests.md`, `failure-tests/` |
-| Module 9 | EVPN/VXLAN design | Stage 8 — Overlay design only | `evpn-vxlan-plan.md`, `docs/04-evpn-vxlan-design.md` |
-| Module 10 | Automation readiness | Stage 9 — Automation after manual validation | Future `ansible/`, `scripts/`, `validation/` |
-
----
-
-## 5. Module 1 — Lab Platform Basics
-
-### What to Learn
-
-- Containerlab topology files
-- node kinds
-- container images
-- virtual links
-- endpoint naming
-- `clab-*` runtime directories
-- `containerlab deploy`
-- `containerlab inspect`
-- `containerlab destroy`
-- FRR container access
-- `vtysh`
-
-### Lab Work
-
-Use the already completed Phase 0 labs:
+Expected spine-leaf BGP sessions:
 
 ```text
-labs/00-platform-validation/alpine-smoke-test.clab.yml
-labs/00-platform-validation/frr-smoke-test.clab.yml
+spine1 <-> leaf1
+spine1 <-> leaf2
+spine1 <-> leaf3
+spine1 <-> leaf4
+
+spine2 <-> leaf1
+spine2 <-> leaf2
+spine2 <-> leaf3
+spine2 <-> leaf4
 ```
 
-### Expected Output
+Expected total:
+
+```text
+8 spine-leaf eBGP sessions
+```
+
+---
+
+## 4. File Roles in This Lab
+
+This file explains what Phase 1 is meant to teach.
+
+The main lab instructions live in `README.md`.
+
+| File | Role |
+|---|---|
+| `README.md` | Main lab manual |
+| `learning-outline.md` | Learning goals and concept-to-lab mapping |
+| `topology.clab.yml` | Containerlab topology |
+| `ip-plan.md` | Interface, loopback, P2P, and host-facing IP plan |
+| `asn-plan.md` | BGP ASN design |
+| `validation.md` | Validation command guide |
+| `failure-tests.md` | Failure testing plan |
+| `configs/` | Saved or generated FRR configs |
+| `outputs/` | Saved validation outputs |
+| `failure-tests/` | Saved failure test outputs |
+
+Use this file to understand the learning path.
+
+Use `README.md` to perform the lab.
+
+Use `validation.md` and `failure-tests.md` when saving proof that the lab works.
+
+---
+
+## 5. Learning-to-Lab Mapping
+
+| Module | Learning Topic | Lab Stage | Main Artifact |
+|---|---|---|---|
+| Module 1 | Platform validation recap | Previous phase | `labs/00-platform-validation/outputs/` |
+| Module 2 | Leaf-spine / Clos foundation | Topology design | `topology.clab.yml` |
+| Module 3 | IP and ASN planning | Addressing and ASN design | `ip-plan.md`, `asn-plan.md` |
+| Module 4 | FRRouting basics | FRR basic checks | `outputs/frr-basic-checks.md` |
+| Module 5 | One eBGP pair | Configure `spine1 <-> leaf1` manually | `outputs/spine1-leaf1-bgp.md` |
+| Module 6 | Full eBGP underlay | Configure all spine-leaf sessions | `configs/`, `outputs/bgp-summary-all.txt` |
+| Module 7 | Loopback reachability and ECMP | Route and ECMP validation | `outputs/loopback-ping-tests.txt`, `outputs/ecmp-checks.txt` |
+| Module 8 | Failure testing | Link, spine, and leaf failure tests | `failure-tests.md`, `failure-tests/` |
+
+---
+
+## 6. Module 1 — Platform Validation Recap
+
+### What Was Learned
+
+The previous platform validation phase proved that the lab host can run:
+
+- Docker
+- Containerlab
+- Alpine containers
+- FRR containers
+- virtual links
+- basic container-to-container connectivity
+- `vtysh` inside FRR containers
+
+### Previous Artifacts
 
 ```text
 labs/00-platform-validation/outputs/alpine-smoke-test.md
 labs/00-platform-validation/outputs/frr-smoke-test.md
 ```
 
-### What You Should Be Able to Explain
+### Why It Matters for Phase 1
 
-- Why Phase 0 exists before the real fabric lab.
-- What Containerlab creates when a topology is deployed.
-- What a `clab-*` runtime directory is.
-- How to access an FRR container.
-- Why `vtysh` is needed.
+Phase 1 assumes the lab platform is already working.
+
+If Phase 1 deployment fails, the first troubleshooting question should be whether the basic Containerlab and FRR behavior still works.
 
 ---
 
-## 6. Module 2 — Leaf-Spine / Clos Foundation
+## 7. Module 2 — Leaf-Spine / Clos Foundation
 
 ### What to Learn
 
@@ -139,7 +186,7 @@ labs/00-platform-validation/outputs/frr-smoke-test.md
 - why there are usually no direct leaf-to-leaf links
 - why ECMP is important
 - why east-west traffic matters
-- why AI/GPU clusters care about predictable bandwidth
+- why predictable bandwidth matters in modern data center fabrics
 
 ### Lab Work
 
@@ -167,14 +214,14 @@ labs/01-frr-leaf-spine/topology.clab.yml
 
 - What role the spine layer plays.
 - What role the leaf layer plays.
-- Why each leaf should connect to both spines.
+- Why each leaf connects to both spines.
+- Why leaf-to-leaf traffic goes through the spine layer.
 - How this design creates path redundancy.
 - How this design prepares for ECMP.
-- Why this foundation is relevant to AI data center fabrics.
 
 ---
 
-## 7. Module 3 — IP and ASN Planning
+## 8. Module 3 — IP and ASN Planning
 
 ### What to Learn
 
@@ -183,13 +230,13 @@ labs/01-frr-leaf-spine/topology.clab.yml
 - `/31` links
 - host-facing addressing
 - private ASN usage
-- per-device ASN design
 - eBGP fabric design
-- why BGP is common in data center fabrics
+- shared spine ASN vs per-device ASN design
+- why BGP is commonly used in data center fabrics
 
 ### Lab Work
 
-Create:
+Create and maintain:
 
 ```text
 labs/01-frr-leaf-spine/ip-plan.md
@@ -201,15 +248,15 @@ The IP plan should document:
 - spine loopbacks
 - leaf loopbacks
 - point-to-point spine-leaf links
-- host-facing links or subnets
-- any lab-only addressing conventions
+- host-facing links
+- interface naming
 
 The ASN plan should document:
 
-- spine ASNs
-- leaf ASNs
-- why the lab uses eBGP
-- why the lab uses per-device or per-role ASNs
+- spine ASN design
+- leaf ASN design
+- expected BGP sessions
+- route advertisement plan
 
 ### Main Artifacts
 
@@ -223,12 +270,12 @@ labs/01-frr-leaf-spine/asn-plan.md
 - Why loopbacks are useful in routing labs.
 - Why `/31` is commonly used for point-to-point links.
 - Why eBGP can be used inside a data center fabric.
-- What tradeoff exists between per-device ASN and shared ASN designs.
+- Why the lab starts with a simple ASN design.
 - How the addressing plan maps to the topology.
 
 ---
 
-## 8. Module 4 — FRRouting Basics
+## 9. Module 4 — FRRouting Basics
 
 ### What to Learn
 
@@ -236,8 +283,8 @@ labs/01-frr-leaf-spine/asn-plan.md
 - what `zebra` does
 - what `bgpd` does
 - what `vtysh` does
-- where FRR configuration lives
-- difference between Linux routing table and BGP table
+- where FRR configuration is stored
+- difference between the Linux routing table and the BGP table
 - basic FRR verification commands
 
 ### Lab Work
@@ -263,19 +310,20 @@ labs/01-frr-leaf-spine/outputs/frr-basic-checks.md
 - Why `zebra` and `bgpd` are both needed.
 - What `show ip route` proves.
 - What `show bgp summary` proves.
-- Why an empty BGP summary is expected before BGP configuration.
+- Why BGP summary may be empty before BGP is configured.
 
 ---
 
-## 9. Module 5 — One eBGP Pair
+## 10. Module 5 — One eBGP Pair
 
 ### What to Learn
 
 - how a BGP neighbor is established
 - what local ASN and remote ASN mean
 - what neighbor IP means
-- how connected interfaces are used for eBGP peering
+- how directly connected interfaces are used for eBGP peering
 - how to verify one BGP session before scaling out
+- how to troubleshoot a failed BGP session
 
 ### Lab Work
 
@@ -285,7 +333,7 @@ Manually configure only one BGP pair first:
 spine1 <-> leaf1
 ```
 
-Do not configure the full fabric immediately.
+Do not configure the full fabric until the first pair is understood and verified.
 
 ### Main Output
 
@@ -298,12 +346,12 @@ labs/01-frr-leaf-spine/outputs/spine1-leaf1-bgp.md
 - Why starting with one BGP pair is safer.
 - What must match on both sides for BGP to come up.
 - How to identify whether a BGP session is established.
-- How to troubleshoot a failed BGP session.
-- Why manual configuration comes before automation.
+- How to check the learned routes.
+- What to check if the BGP session does not establish.
 
 ---
 
-## 10. Module 6 — Full eBGP Underlay
+## 11. Module 6 — Full eBGP Underlay
 
 ### What to Learn
 
@@ -343,12 +391,12 @@ labs/01-frr-leaf-spine/outputs/bgp-summary-all.txt
 - How many BGP sessions should exist.
 - Why each leaf peers with both spines.
 - How loopback routes are advertised.
-- How underlay reachability supports future overlays.
+- How underlay reachability supports future overlay work.
 - What a healthy `show bgp summary` looks like.
 
 ---
 
-## 11. Module 7 — Loopback Reachability and ECMP
+## 12. Module 7 — Loopback Reachability and ECMP
 
 ### What to Learn
 
@@ -356,7 +404,7 @@ labs/01-frr-leaf-spine/outputs/bgp-summary-all.txt
 - how to test loopback-to-loopback connectivity
 - how to identify ECMP routes
 - how multiple equal-cost paths appear in the routing table
-- why ECMP matters for AI and data center fabrics
+- why ECMP matters in data center fabrics
 
 ### Lab Work
 
@@ -376,11 +424,11 @@ labs/01-frr-leaf-spine/outputs/ecmp-checks.txt
 - Why loopback reachability is a good underlay validation test.
 - How to confirm that ECMP exists.
 - Why ECMP improves bandwidth and redundancy.
-- Why predictable multipath behavior is important in AI/GPU fabrics.
+- What should happen to ECMP when one path fails.
 
 ---
 
-## 12. Module 8 — Failure Testing
+## 13. Module 8 — Failure Testing
 
 ### What to Learn
 
@@ -389,6 +437,7 @@ labs/01-frr-leaf-spine/outputs/ecmp-checks.txt
 - spine failure behavior
 - leaf failure behavior
 - expected vs actual results
+- recovery validation
 - how to document operational behavior
 
 ### Lab Work
@@ -417,84 +466,53 @@ labs/01-frr-leaf-spine/failure-tests/
 
 ### What You Should Be Able to Explain
 
-- What traffic or routes should survive a single spine-link failure.
+- What routes should survive a single spine-link failure.
 - What should happen when one spine is down.
 - What should happen when one leaf is down.
-- Why failure testing is important for portfolio evidence.
-- How this maps to production change validation.
+- How BGP routes are withdrawn and restored.
+- Why failure testing is important for operational validation.
 
 ---
 
-## 13. Module 9 — EVPN/VXLAN Design Before Implementation
+## 14. Later Topics Prepared by This Lab
 
-### What to Learn
+Phase 1 does not implement these topics, but it prepares for them.
+
+### EVPN/VXLAN
+
+The Phase 1 underlay prepares for:
 
 - underlay vs overlay
-- VTEP
-- VNI
-- L2 VNI
-- L3 VNI
-- EVPN control plane
-- why overlays are used in modern data centers
-- where EVPN/VXLAN fits relative to the eBGP underlay
+- VTEP reachability
+- VNI design
+- BGP EVPN control plane
+- host-to-host overlay reachability
 
-### Lab Work
+These topics are handled in later EVPN/VXLAN work.
 
-Write the design before implementation.
+### RoCEv2 and Lossless Ethernet
 
-Do not implement EVPN/VXLAN in Phase 1 unless the underlay is already complete and documented.
+The Phase 1 fabric concepts prepare for:
 
-### Main Outputs
+- predictable paths
+- congestion awareness
+- packet loss sensitivity
+- telemetry requirements
+- failure domain thinking
 
-```text
-labs/01-frr-leaf-spine/evpn-vxlan-plan.md
-docs/04-evpn-vxlan-design.md
-```
+These topics are handled in later RoCEv2 and lossless Ethernet notes.
 
-### What You Should Be Able to Explain
+### SONiC and Cumulus
 
-- What problem EVPN/VXLAN solves.
-- What the underlay provides.
-- What the overlay provides.
-- What a VTEP is.
-- What a VNI is.
-- Why EVPN/VXLAN should not be started before the underlay is validated.
+The Phase 1 FRR lab prepares for later network operating system comparisons.
 
----
+The routing concepts should be understood before comparing FRR-only labs with SONiC or Cumulus behavior.
 
-## 14. Module 10 — Automation Readiness
+### Automation
 
-### What to Learn
+The Phase 1 manual configuration and validation prepare for later automation.
 
-- inventory design
-- structured data
-- Jinja2 templates
-- Ansible playbooks
-- Python validation
-- source-of-truth thinking
-- CI-ready checks
-
-### Rule
-
-Do not automate before the manual underlay works.
-
-Automation should come after understanding.
-
-### Future Outputs
-
-```text
-ansible/
-scripts/
-validation/
-```
-
-### What You Should Be Able to Explain
-
-- What data should be stored in inventory.
-- What config should be generated from templates.
-- What should be validated automatically.
-- How automation supports production network operations.
-- How this connects to NetDevOps and AI infrastructure roles.
+Automation should be added after the manual behavior is understood.
 
 ---
 
@@ -503,13 +521,10 @@ validation/
 Use this checklist to decide whether Phase 1 is complete.
 
 - [ ] Phase 0 platform validation is complete.
-- [ ] Repo skeleton exists.
-- [ ] `labs/01-frr-leaf-spine/README.md` exists and explains the lab.
-- [ ] Phase 1 topology is documented.
-- [ ] `topology.clab.yml` exists.
+- [ ] `labs/01-frr-leaf-spine/README.md` explains the lab clearly.
+- [ ] `topology.clab.yml` exists and deploys successfully.
 - [ ] IP plan is documented.
 - [ ] ASN plan is documented.
-- [ ] Containerlab can deploy the 2-spine / 4-leaf / 4-host topology.
 - [ ] FRR nodes start correctly.
 - [ ] FRR basic checks are saved.
 - [ ] One BGP pair works.
@@ -518,8 +533,7 @@ Use this checklist to decide whether Phase 1 is complete.
 - [ ] ECMP is visible.
 - [ ] Failure tests are documented.
 - [ ] Selected command outputs are saved.
-- [ ] EVPN/VXLAN design is written before implementation.
-- [ ] You can explain each config independently.
+- [ ] You can explain the underlay design and validation results independently.
 
 ---
 
@@ -527,6 +541,7 @@ Use this checklist to decide whether Phase 1 is complete.
 
 Do not move too fast into:
 
+- EVPN/VXLAN implementation
 - RoCEv2
 - PFC
 - ECN
@@ -538,26 +553,32 @@ Do not move too fast into:
 - CI pipelines
 - NetBox integration
 
-These are important, but they should come after the FRR leaf-spine foundation is clear and validated.
+These are important, but they should come after the FRR leaf-spine underlay is working and documented.
 
 ---
 
-## 17. Immediate Next Step
+## 17. How to Use This File
 
-The next practical step is to complete the Phase 1 lab manual:
+Read this file before starting or continuing the Phase 1 lab.
+
+Use it to understand:
+
+- what the lab is trying to teach
+- which file belongs to which learning step
+- what should be completed before moving to later topics
+
+During the lab:
 
 ```text
-labs/01-frr-leaf-spine/README.md
+README.md           = main lab manual
+ip-plan.md          = addressing reference
+asn-plan.md         = BGP ASN reference
+validation.md       = validation commands
+failure-tests.md    = failure testing guide
+outputs/            = saved validation results
+failure-tests/      = saved failure test results
 ```
 
-Then complete:
+This file should not need frequent updates.
 
-```text
-labs/01-frr-leaf-spine/topology.clab.yml
-labs/01-frr-leaf-spine/ip-plan.md
-labs/01-frr-leaf-spine/asn-plan.md
-labs/01-frr-leaf-spine/validation.md
-labs/01-frr-leaf-spine/failure-tests.md
-```
-
-Only after these files are clear should the full topology be deployed.
+Update it only if the learning scope of Phase 1 changes.
