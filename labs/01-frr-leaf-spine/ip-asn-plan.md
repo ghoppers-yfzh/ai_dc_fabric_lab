@@ -1,4 +1,4 @@
-# IP Plan — FRR Leaf-Spine Lab
+# IP and ASN Plan — FRR Leaf-Spine Lab
 
 ## 1. Addressing Goals
 
@@ -14,8 +14,6 @@ Addressing blocks:
 
 ## 2. Interface Convention
 
-### Spines
-
 | Node | Interface | Connected To |
 |---|---|---|
 | `spine1` | `eth1` | `leaf1 eth1` |
@@ -27,22 +25,6 @@ Addressing blocks:
 | `spine2` | `eth3` | `leaf3 eth2` |
 | `spine2` | `eth4` | `leaf4 eth2` |
 
-### Leaves
-
-| Node | Interface | Connected To |
-|---|---|---|
-| `leaf1` | `eth1` | `spine1 eth1` |
-| `leaf1` | `eth2` | `spine2 eth1` |
-| `leaf1` | `eth3` | `host1 eth1` |
-| `leaf2` | `eth1` | `spine1 eth2` |
-| `leaf2` | `eth2` | `spine2 eth2` |
-| `leaf2` | `eth3` | `host2 eth1` |
-| `leaf3` | `eth1` | `spine1 eth3` |
-| `leaf3` | `eth2` | `spine2 eth3` |
-| `leaf3` | `eth3` | `host3 eth1` |
-| `leaf4` | `eth1` | `spine1 eth4` |
-| `leaf4` | `eth2` | `spine2 eth4` |
-| `leaf4` | `eth3` | `host4 eth1` |
 
 ## 3. Loopback Addresses
 
@@ -77,9 +59,20 @@ Addressing blocks:
 | `leaf3-host3` | `leaf3 eth3 192.168.3.1/24` | `host3 eth1 192.168.3.11/24` | `192.168.3.1` |
 | `leaf4-host4` | `leaf4 eth3 192.168.4.1/24` | `host4 eth1 192.168.4.11/24` | `192.168.4.1` |
 
-## 6. Routes to Advertise
+## 6. ASN Allocation
 
-For the initial eBGP underlay stage, advertise loopbacks first.
+| Node | ASN |
+|---|---:|
+| `spine1` | `65000` |
+| `spine2` | `65000` |
+| `leaf1` | `65101` |
+| `leaf2` | `65102` |
+| `leaf3` | `65103` |
+| `leaf4` | `65104` |
+
+## 7. Routes to Advertise
+
+### Loopback Prefixes
 
 | Node | Prefix to Advertise |
 |---|---|
@@ -90,9 +83,17 @@ For the initial eBGP underlay stage, advertise loopbacks first.
 | `leaf3` | `10.255.1.3/32` |
 | `leaf4` | `10.255.1.4/32` |
 
-Host-facing networks can be advertised later after the loopback reachability test is working.
 
-## 7. Notes
+### Host-facing Prefixes
+
+| Node | Prefix to Advertise |
+|---|---|
+| `leaf1` | `192.168.1.0/24` |
+| `leaf2` | `192.168.2.0/24` |
+| `leaf3` | `192.168.3.0/24` |
+| `leaf4` | `192.168.4.0/24` |
+
+## 8. Notes
 
 - `/31` is used for point-to-point spine-leaf links.
 - Loopbacks are `/32` and should remain stable regardless of physical link status.

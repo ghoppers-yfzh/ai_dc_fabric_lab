@@ -45,23 +45,33 @@ topology:
         - configs/common/daemons:/etc/frr/daemons
         - configs/leaf4/zebra.conf:/etc/frr/zebra.conf
         - configs/leaf4/bgpd.conf:/etc/frr/bgpd.conf
-
     host1:
       kind: linux
-      image: alpine:latest
-      cmd: sleep infinity
+      image: nicolaka/netshoot
+      exec:
+        - ip addr add 192.168.1.11/24 dev eth1
+        - ip route replace default via 192.168.1.1
+
     host2:
       kind: linux
-      image: alpine:latest
-      cmd: sleep infinity
+      image: nicolaka/netshoot
+      exec:
+        - ip addr add 192.168.2.11/24 dev eth1
+        - ip route replace default via 192.168.2.1
+
     host3:
       kind: linux
-      image: alpine:latest
-      cmd: sleep infinity
+      image: nicolaka/netshoot
+      exec:
+        - ip addr add 192.168.3.11/24 dev eth1
+        - ip route replace default via 192.168.3.1
+
     host4:
       kind: linux
-      image: alpine:latest
-      cmd: sleep infinity
+      image: nicolaka/netshoot
+      exec:
+        - ip addr add 192.168.4.11/24 dev eth1
+        - ip route replace default via 192.168.4.1
 
   links:
     # spine1 to leaves

@@ -9,17 +9,7 @@ The goal is to save evidence that the lab works, not only to run commands intera
 Save important outputs under:
 
 ```text
-labs/01-frr-leaf-spine/outputs/# Validation
-
-## BGP Underlay Validation
-
-### Expected result
-
-- All spine-to-leaf BGP sessions are Established.
-- Each spine learns all leaf loopback prefixes.
-- Each leaf learns remote leaf loopback prefixes through the spines.
-- Leaf loopbacks are reachable across the fabric.
-
+labs/01-frr-leaf-spine/outputs/
 ```
 
 ## 2. Deploy Validation
@@ -101,8 +91,8 @@ docker exec clab-frr-leaf-spine-leaf1 ip -br addr
 Expected result:
 
 - loopback addresses exist
-- point-to-point interface addresses match `ip-plan.md`
-- host-facing addresses match `ip-plan.md`
+- point-to-point interface addresses match `ip-asn-plan.md`
+- host-facing addresses match `ip-asn-plan.md`
 
 ## 6. One BGP Pair Validation
 
@@ -246,7 +236,47 @@ Expected output files:
 outputs/containerlab-inspect-initial.txt
 outputs/frr-basic-checks.md
 outputs/spine1-leaf1-bgp.md
-outputs/bgp-summary-all.txt
+outputs/bgp-summary-all.md
 outputs/loopback-ping-tests.txt
 outputs/ecmp-checks.txt
+outputs/host-reachability.md
 ```
+
+
+## 13. Host-to-Host Reachability Validation
+
+This validation confirms that directly attached host subnets are advertised into the eBGP underlay and are reachable across the routed fabric.
+
+### Useful commands:
+
+```bash
+for host in host1 host2 host3 host4; do
+  echo "===== $host ====="
+  docker exec clab-frr-leaf-spine-$host ip -br addr
+  docker exec clab-frr-leaf-spine-$host ip route
+done
+
+docker exec clab-frr-leaf-spine-host1 ping -c 3 192.168.1.1
+docker exec clab-frr-leaf-spine-host1 ping -c 3 192.168.2.11
+docker exec clab-frr-leaf-spine-host1 ping -c 3 192.168.3.11
+docker exec clab-frr-leaf-spine-host1 ping -c 3 192.168.4.11
+
+for node in spine1 spine2 leaf1 leaf2 leaf3 leaf4; do
+  echo "===== $node ====="
+  docker exec clab-frr-leaf-spine-$node vtysh -c "show bgp ipv4 unicast"
+done
+
+```
+
+### Expected result:
+
+- Each host can reach its local leaf gateway.
+- Each leaf advertises its directly attached host subnet.
+- Spine switches learn all host-facing subnets.
+- Remote leaves learn host-facing subnets through eBGP.
+- host1 can reach host2, host3, and host4.
+
+
+### Evidence:
+
+- `outputs/host-reachability.md`
