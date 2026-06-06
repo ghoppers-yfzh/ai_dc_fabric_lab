@@ -99,9 +99,26 @@ Stop `spine1`.
 
 ### Failure Action
 
+Shut down all spine1 fabric-facing interfaces
+
+
 ```bash
-docker stop clab-frr-leaf-spine-spine1
+spine1=$(docker ps --format '{{.Names}}' | grep -E "clab-.*-spine1$")
+
+docker exec "$spine1" ip link set eth1 down
+docker exec "$spine1" ip link set eth2 down
+docker exec "$spine1" ip link set eth3 down
+docker exec "$spine1" ip link set eth4 down
 ```
+Bring the interfaces back up
+```bash
+docker exec "$spine1" ip link set eth1 up
+docker exec "$spine1" ip link set eth2 up
+docker exec "$spine1" ip link set eth3 up
+docker exec "$spine1" ip link set eth4 up
+```
+
+Note, do not use docker stop/start for failure test which breaks the veth link in containerlab.
 
 ### Validation
 
