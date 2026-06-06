@@ -9,7 +9,17 @@ The goal is to save evidence that the lab works, not only to run commands intera
 Save important outputs under:
 
 ```text
-labs/01-frr-leaf-spine/outputs/
+labs/01-frr-leaf-spine/outputs/# Validation
+
+## BGP Underlay Validation
+
+### Expected result
+
+- All spine-to-leaf BGP sessions are Established.
+- Each spine learns all leaf loopback prefixes.
+- Each leaf learns remote leaf loopback prefixes through the spines.
+- Leaf loopbacks are reachable across the fabric.
+
 ```
 
 ## 2. Deploy Validation
