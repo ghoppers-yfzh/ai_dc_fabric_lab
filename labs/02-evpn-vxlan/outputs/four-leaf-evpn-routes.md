@@ -1,4 +1,4 @@
-]633;E;echo "# Four-Leaf EVPN Routes";fbf5a41f-2d56-4ae0-adfc-bae181e9a759]633;C# Four-Leaf EVPN Routes
+# Four-Leaf EVPN Routes
 
 ## leaf1 EVPN routes
 BGP table version is 2, local router ID is 10.255.1.1

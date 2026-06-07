@@ -1,4 +1,4 @@
-]633;E;echo "# EVPN Route Target Cleanup Validation";fbf5a41f-2d56-4ae0-adfc-bae181e9a759]633;C# EVPN Route Target Cleanup Validation
+# EVPN Route Target Cleanup Validation
 
 ## leaf1 EVPN routes
 BGP table version is 2, local router ID is 10.255.1.1

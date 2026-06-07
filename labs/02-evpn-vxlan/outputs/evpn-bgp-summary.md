@@ -1,4 +1,4 @@
-]633;E;echo "# EVPN BGP Summary";fbf5a41f-2d56-4ae0-adfc-bae181e9a759]633;C# EVPN BGP Summary
+# EVPN BGP Summary
 
 ## spine1
 BGP router identifier 10.255.0.1, local AS number 65000 vrf-id 0

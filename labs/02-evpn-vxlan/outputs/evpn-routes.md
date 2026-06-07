@@ -1,4 +1,4 @@
-]633;E;echo "# EVPN Routes and VNI State";fbf5a41f-2d56-4ae0-adfc-bae181e9a759]633;C# EVPN Routes and VNI State
+# EVPN Routes and VNI State
 
 ## leaf1 show evpn vni
 VNI        Type VxLAN IF              # MACs   # ARPs   # Remote VTEPs  Tenant VRF                           

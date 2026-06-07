@@ -1,4 +1,4 @@
-]633;E;echo "# Four-Leaf Bridge and FDB State";fbf5a41f-2d56-4ae0-adfc-bae181e9a759]633;C# Four-Leaf Bridge and FDB State
+# Four-Leaf Bridge and FDB State
 
 ## leaf1 bridge links
 666: eth3@if665: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9500 master br10 state forwarding priority 32 cost 2 

@@ -692,3 +692,21 @@ This EVPN/VXLAN validation stage is complete when:
 
 
 ## Note: A dedicated spine-path failure test is skipped for now. The EVPN route table already showed remote Type-2 and Type-3 routes learned through both spine paths, which is enough evidence for the current lab stage. Failure convergence testing can be added later.
+
+## Anycast Gateway Validation
+
+This validation confirms that a distributed anycast gateway can be added to the existing L2VNI service without breaking overlay reachability.
+
+Validated scope:
+
+- all leaves have bridge interface `br10`
+- all leaves use the same anycast gateway IP `192.168.10.1/24`
+- all leaves use the same anycast gateway MAC
+- all hosts use `192.168.10.1` as their default gateway
+- each host can reach the anycast gateway
+- same-subnet host-to-host overlay reachability still works
+
+Evidence:
+
+- `outputs/anycast-gateway-validation.md`
+- `outputs/anycast-gateway-neighbors.md`

@@ -1,4 +1,4 @@
-]633;E;echo "# Host Overlay Reachability";fbf5a41f-2d56-4ae0-adfc-bae181e9a759]633;C# Host Overlay Reachability
+# Host Overlay Reachability
 
 ## host1 to host2
 PING 192.168.10.12 (192.168.10.12) 56(84) bytes of data.
