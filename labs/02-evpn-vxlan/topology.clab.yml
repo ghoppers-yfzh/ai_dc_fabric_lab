@@ -25,6 +25,14 @@ topology:
         - configs/common/daemons:/etc/frr/daemons
         - configs/leaf1/zebra.conf:/etc/frr/zebra.conf
         - configs/leaf1/bgpd.conf:/etc/frr/bgpd.conf
+      exec:
+        - ip link add br10 type bridge
+        - ip link set br10 up
+        - ip link set eth3 master br10
+        - ip link set eth3 up
+        - ip link add vxlan10010 type vxlan id 10010 dev eth3 local 10.255.1.1 dstport 4789 nolearning
+        - ip link set vxlan10010 master br10
+        - ip link set vxlan10010 up
     
     leaf2:
       kind: linux
@@ -33,6 +41,14 @@ topology:
         - configs/common/daemons:/etc/frr/daemons
         - configs/leaf2/zebra.conf:/etc/frr/zebra.conf
         - configs/leaf2/bgpd.conf:/etc/frr/bgpd.conf
+      exec:
+        - ip link add br10 type bridge
+        - ip link set br10 up
+        - ip link set eth3 master br10
+        - ip link set eth3 up
+        - ip link add vxlan10010 type vxlan id 10010 dev eth3 local 10.255.1.2 dstport 4789 nolearning
+        - ip link set vxlan10010 master br10
+        - ip link set vxlan10010 up
     
     host1:
       kind: linux
