@@ -6,28 +6,34 @@ This file documents the validation workflow for the EVPN/VXLAN lab.
 
 The first validation step is to confirm that the routed underlay works and that VTEP loopbacks are reachable across the fabric.
 
-EVPN/VXLAN should not be configured until the underlay and VTEP reachability are working.
+The second validation step is to confirm that a minimal EVPN/VXLAN L2VNI service works between `host1` and `host2`.
 
 ---
 
 ## 2. Current Validation Scope
 
-Current scope:
+Current completed scope:
 
 - deploy the minimal EVPN/VXLAN lab topology
 - validate all FRR containers are running
 - validate eBGP IPv4 unicast underlay sessions
 - validate loopback route advertisement
 - validate VTEP loopback reachability between `leaf1` and `leaf2`
-- save validation outputs under `outputs/`
+- validate EVPN BGP address-family
+- validate L2VNI `10010`
+- validate EVPN Type-2 MAC routes
+- validate EVPN Type-3 IMET routes
+- validate explicit route-target `65000:10010`
+- validate same-subnet host-to-host reachability across VXLAN
 
 Not included yet:
 
-- EVPN address-family
-- VXLAN interface
-- VLAN to VNI mapping
-- L2VNI
-- host-to-host overlay reachability
+- L3VNI
+- VRF
+- anycast gateway
+- inter-subnet routing
+- multi-leaf expansion
+- EVPN/VXLAN failure testing
 
 ---
 
@@ -91,8 +97,6 @@ Expected result:
 
 - `host1` has `192.168.10.11/24`
 - `host2` has `192.168.10.12/24`
-
-At this stage, host-to-host reachability is not expected yet because VXLAN/L2VNI has not been configured.
 
 ---
 
@@ -187,7 +191,7 @@ Save output:
 
 ## 7. VTEP Loopback Reachability
 
-The leaf loopbacks will be used as VTEP source addresses in the EVPN/VXLAN lab.
+The leaf loopbacks are used as VTEP source addresses in the EVPN/VXLAN lab.
 
 Validate VTEP loopback reachability:
 
@@ -264,61 +268,58 @@ Expected result:
 
 ---
 
-## 9. Current Output Checklist
+## 9. Static VXLAN Data Plane Validation
 
-Expected output files for this step:
+Before relying on EVPN as the control plane, the VXLAN data plane can be validated with a static flood FDB entry.
 
-```text
-outputs/underlay-bgp-summary.md
-outputs/vtep-reachability.md
-```
+This confirms that the following components work before EVPN route learning is introduced:
 
-Optional additional outputs:
-
-```text
-outputs/interface-addresses.md
-outputs/underlay-routes.md
-```
-
----
-
-## 10. Cleanup
-
-Destroy the lab:
-
-```bash
-sudo containerlab destroy -t topology.clab.yml
-```
-
-Destroy and remove runtime files if needed:
-
-```bash
-sudo containerlab destroy -t topology.clab.yml --cleanup
-```
-
----
-
-## 11. Completion Criteria
-
-This validation step is complete when:
-
-- all containers start successfully
-- all underlay eBGP sessions are established
-- `leaf1` learns `leaf2` loopback through BGP
-- `leaf2` learns `leaf1` loopback through BGP
-- VTEP loopback reachability works with loopback IP source addresses
-- validation outputs are saved as Markdown files under `outputs/`
-
-The next step is to add EVPN/VXLAN configuration:
-
-- EVPN BGP address-family
-- bridge and VLAN configuration
+- Linux bridge
 - VXLAN interface
-- L2VNI `10010`
-- same-subnet host-to-host reachability between `host1` and `host2`
+- VTEP source loopback
+- underlay reachability between VTEPs
+- host-to-host forwarding across VXLAN
 
+Example static FDB entries:
 
-## EVPN L2VNI Overlay Validation
+```bash
+docker exec clab-evpn-vxlan-leaf1 bridge fdb append 00:00:00:00:00:00 dev vxlan10010 dst 10.255.1.2
+docker exec clab-evpn-vxlan-leaf2 bridge fdb append 00:00:00:00:00:00 dev vxlan10010 dst 10.255.1.1
+```
+
+Expected result:
+
+```bash
+docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.10.12
+docker exec clab-evpn-vxlan-host2 ping -c 3 192.168.10.11
+```
+
+Save output:
+
+```bash
+{
+  echo "# Static VXLAN Data Plane Test"
+  echo
+  echo "## leaf1 bridge links"
+  docker exec clab-evpn-vxlan-leaf1 bridge link
+  echo
+  echo "## leaf1 FDB"
+  docker exec clab-evpn-vxlan-leaf1 bridge fdb show
+  echo
+  echo "## leaf2 bridge links"
+  docker exec clab-evpn-vxlan-leaf2 bridge link
+  echo
+  echo "## leaf2 FDB"
+  docker exec clab-evpn-vxlan-leaf2 bridge fdb show
+  echo
+  echo "## host1 to host2"
+  docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.10.12
+} > outputs/static-vxlan-data-plane.md
+```
+
+---
+
+## 10. EVPN L2VNI Overlay Validation
 
 This validation confirms that EVPN/VXLAN is working for a basic L2VNI service.
 
@@ -340,3 +341,356 @@ for node in spine1 spine2 leaf1 leaf2; do
   echo "===== $node ====="
   docker exec clab-evpn-vxlan-$node vtysh -c "show bgp l2vpn evpn summary"
 done
+```
+
+```bash
+docker exec clab-evpn-vxlan-leaf1 vtysh -c "show evpn vni"
+docker exec clab-evpn-vxlan-leaf2 vtysh -c "show evpn vni"
+
+docker exec clab-evpn-vxlan-leaf1 vtysh -c "show bgp l2vpn evpn"
+docker exec clab-evpn-vxlan-leaf2 vtysh -c "show bgp l2vpn evpn"
+```
+
+```bash
+docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.10.12
+docker exec clab-evpn-vxlan-host2 ping -c 3 192.168.10.11
+```
+
+Evidence:
+
+- `outputs/evpn-bgp-summary.md`
+- `outputs/evpn-routes.md`
+- `outputs/host-overlay-reachability.md`
+
+---
+
+## 11. Explicit Route Target Cleanup Validation
+
+The lab originally worked with auto-derived route targets. Because `leaf1` and `leaf2` use different ASNs, the auto-derived RT values were different per leaf.
+
+For clearer service-level design, L2VNI `10010` now uses an explicit common RT:
+
+```text
+RT: 65000:10010
+```
+
+Expected result:
+
+- local and remote EVPN routes for VNI `10010` carry `RT:65000:10010`
+- Type-2 MAC routes are still visible
+- Type-3 IMET routes are still visible
+- remote VTEP learning still works
+- host overlay reachability still works
+
+Validation commands:
+
+```bash
+docker exec clab-evpn-vxlan-leaf1 vtysh -c "show bgp l2vpn evpn"
+docker exec clab-evpn-vxlan-leaf2 vtysh -c "show bgp l2vpn evpn"
+
+docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.10.12
+docker exec clab-evpn-vxlan-host2 ping -c 3 192.168.10.11
+```
+
+Save output:
+
+```bash
+{
+  echo "# EVPN Route Target Cleanup Validation"
+  echo
+  echo "## leaf1 EVPN routes"
+  docker exec clab-evpn-vxlan-leaf1 vtysh -c "show bgp l2vpn evpn"
+  echo
+  echo "## leaf2 EVPN routes"
+  docker exec clab-evpn-vxlan-leaf2 vtysh -c "show bgp l2vpn evpn"
+  echo
+  echo "## host1 to host2"
+  docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.10.12
+  echo
+  echo "## host2 to host1"
+  docker exec clab-evpn-vxlan-host2 ping -c 3 192.168.10.11
+} > outputs/evpn-rt-cleanup.md
+```
+
+Evidence:
+
+- `outputs/evpn-rt-cleanup.md`
+
+---
+
+## 12. Key Interpretation Notes
+
+### RD and RT have different roles
+
+The Route Distinguisher and Route Target are not the same thing.
+
+The RD makes EVPN routes unique in the BGP table.
+
+In this lab, each leaf has its own RD:
+
+```text
+leaf1 RD: 10.255.1.1:2
+leaf2 RD: 10.255.1.2:2
+```
+
+This is expected and does not need to be the same across leaves.
+
+The RT controls route import and export.
+
+For the same L2VNI, both leaves should import and export the same RT:
+
+```text
+RT: 65000:10010
+```
+
+This means both VTEPs are participating in the same EVPN service for L2VNI `10010`.
+
+A useful rule:
+
+```text
+RD can be different per VTEP.
+RT should be consistent for the same EVPN service.
+```
+
+---
+
+### EVPN Type-2 routes are MAC reachability routes
+
+EVPN Type-2 routes advertise MAC reachability.
+
+Example:
+
+```text
+[2]:[0]:[48]:[aa:c1:ab:fc:81:0c]
+```
+
+Interpretation:
+
+```text
+[2]  = EVPN Type-2 route
+[48] = MAC address length, 48 bits
+aa:c1:ab:fc:81:0c = advertised MAC address
+```
+
+For a local Type-2 route, the next hop is the local VTEP.
+
+Example:
+
+```text
+Next Hop: 10.255.1.1
+Weight: 32768
+```
+
+This means the MAC is locally attached to `leaf1`.
+
+For a remote Type-2 route, the next hop is the remote VTEP.
+
+Example:
+
+```text
+Next Hop: 10.255.1.2
+AS Path: 65000 65102
+```
+
+This means the MAC is reachable behind `leaf2`, and traffic should be sent through VXLAN toward VTEP `10.255.1.2`.
+
+Type-2 routes are the key EVPN routes that allow one VTEP to learn where remote host MAC addresses live.
+
+---
+
+### EVPN Type-3 routes identify remote VTEPs for the VNI
+
+EVPN Type-3 routes are IMET routes.
+
+They indicate that a VTEP participates in a given VNI.
+
+Example:
+
+```text
+[3]:[0]:[32]:[10.255.1.2]
+```
+
+Interpretation:
+
+```text
+[3] = EVPN Type-3 route
+10.255.1.2 = remote VTEP address
+```
+
+In this lab, Type-3 routes allow:
+
+```text
+leaf1 to know that leaf2 participates in VNI 10010
+leaf2 to know that leaf1 participates in VNI 10010
+```
+
+This is also why `show evpn vni` shows:
+
+```text
+# Remote VTEPs: 1
+```
+
+Type-3 routes are important for BUM traffic handling:
+
+```text
+Broadcast
+Unknown unicast
+Multicast
+```
+
+A useful rule:
+
+```text
+Type-2 tells us where MAC addresses are.
+Type-3 tells us which remote VTEPs participate in the VNI.
+```
+
+---
+
+### Multiple remote paths are expected with two spines
+
+Remote EVPN routes may appear twice in the BGP table.
+
+Example:
+
+```text
+*> [2] ... 10.255.1.2 ... 65000 65102 i
+*          10.255.1.2 ... 65000 65102 i
+```
+
+This is expected because the route can be received through both spines:
+
+```text
+leaf2 -> spine1 -> leaf1
+leaf2 -> spine2 -> leaf1
+```
+
+The symbols mean:
+
+```text
+* = valid path
+> = selected best path
+```
+
+So:
+
+```text
+*> = valid and selected as best
+*  = valid but not selected as best
+```
+
+This is not a problem.
+
+It shows that the EVPN control plane has multiple valid paths through the fabric.
+
+Important distinction:
+
+```text
+BGP EVPN chooses a best control-plane path.
+The VXLAN data-plane outer IP traffic still follows the underlay routing table.
+```
+
+For VXLAN traffic, the outer IP path is between VTEP loopbacks:
+
+```text
+10.255.1.1 -> 10.255.1.2
+```
+
+The underlay can still use ECMP to forward that outer IP traffic across the available spine paths.
+
+---
+
+### ET:8 is not the main validation focus at this stage
+
+The output includes:
+
+```text
+ET:8
+```
+
+For this lab stage, do not over-focus on this field.
+
+It is related to EVPN Ethernet Tag information.
+
+At this stage, the more important validation points are:
+
+```text
+Type-2 routes exist
+Type-3 routes exist
+RT is consistent
+next hop is the correct local or remote VTEP
+remote VTEP is learned
+host overlay ping works
+```
+
+The current lab is successful because:
+
+```text
+RT is now consistently 65000:10010
+Type-2 MAC routes are visible
+Type-3 IMET routes are visible
+leaf1 and leaf2 learn each other as remote VTEPs
+host1 and host2 can ping across VXLAN
+```
+
+---
+
+## 13. Output Checklist
+
+Expected output files for this completed step:
+
+```text
+outputs/underlay-bgp-summary.md
+outputs/vtep-reachability.md
+outputs/static-vxlan-data-plane.md
+outputs/evpn-bgp-summary.md
+outputs/evpn-routes.md
+outputs/host-overlay-reachability.md
+outputs/evpn-rt-cleanup.md
+```
+
+Optional additional outputs:
+
+```text
+outputs/interface-addresses.md
+outputs/underlay-routes.md
+```
+
+---
+
+## 14. Cleanup
+
+Destroy the lab:
+
+```bash
+sudo containerlab destroy -t topology.clab.yml
+```
+
+Destroy and remove runtime files if needed:
+
+```bash
+sudo containerlab destroy -t topology.clab.yml --cleanup
+```
+
+---
+
+## 15. Completion Criteria
+
+This EVPN/VXLAN validation stage is complete when:
+
+- all containers start successfully
+- all underlay eBGP sessions are established
+- VTEP loopback reachability works with loopback IP source addresses
+- VXLAN data plane works
+- EVPN BGP sessions are established
+- VNI `10010` is discovered as an L2VNI
+- Type-2 MAC routes are visible
+- Type-3 IMET routes are visible
+- RT is explicitly and consistently set to `65000:10010`
+- host overlay reachability works between `host1` and `host2`
+
+The next steps are:
+
+- document one EVPN/VXLAN failure test
+- expand the lab to additional leaves
+- later add anycast gateway, L3VNI, and VRF
