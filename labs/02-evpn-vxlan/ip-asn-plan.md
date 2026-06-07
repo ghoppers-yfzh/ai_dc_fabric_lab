@@ -25,11 +25,34 @@ leaf4 ASN: 65104
 
 
 
-# Host, vlan, VNI plan
+# Host, VLAN, VNI plan
 
-host1: 192.168.10.11/24
-host2: 192.168.10.12/24
-host3: 192.168.10.13/24
-host4: 192.168.10.14/24
-VLAN: 10
-L2VNI: 10010
+## VLAN 10 / L2VNI 10010
+
+| Host | Leaf | IP | Gateway |
+|---|---|---|---|
+| host1 | leaf1 | 192.168.10.11/24 | 192.168.10.1 |
+| host2 | leaf2 | 192.168.10.12/24 | 192.168.10.1 |
+
+| Item | Value |
+|---|---|
+| VLAN | 10 |
+| L2VNI | 10010 |
+| Anycast gateway IP | 192.168.10.1/24 |
+| Anycast gateway MAC | 00:00:00:00:10:01 |
+| Route target | 65000:10010 |
+
+## VLAN 20 / L2VNI 10020
+
+| Host | Leaf | IP | Gateway |
+|---|---|---|---|
+| host3 | leaf3 | 192.168.20.13/24 | 192.168.20.1 |
+| host4 | leaf4 | 192.168.20.14/24 | 192.168.20.1 |
+
+| Item | Value |
+|---|---|
+| VLAN | 20 |
+| L2VNI | 10020 |
+| Anycast gateway IP | 192.168.20.1/24 |
+| Anycast gateway MAC | 00:00:00:00:20:01 |
+| Route target | 65000:10020 |
