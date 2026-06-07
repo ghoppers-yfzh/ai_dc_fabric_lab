@@ -316,3 +316,27 @@ The next step is to add EVPN/VXLAN configuration:
 - VXLAN interface
 - L2VNI `10010`
 - same-subnet host-to-host reachability between `host1` and `host2`
+
+
+## EVPN L2VNI Overlay Validation
+
+This validation confirms that EVPN/VXLAN is working for a basic L2VNI service.
+
+Validated scope:
+
+- EVPN BGP sessions are established.
+- VNI `10010` is discovered as an L2 VNI on both leaves.
+- Each leaf learns one remote VTEP.
+- EVPN Type-2 MAC routes are visible.
+- EVPN Type-3 IMET routes are visible.
+- `host1` can reach `host2` in the same subnet across VXLAN.
+- `host2` can reach `host1` in the same subnet across VXLAN.
+
+Validation commands:
+
+```bash
+for node in spine1 spine2 leaf1 leaf2; do
+  echo
+  echo "===== $node ====="
+  docker exec clab-evpn-vxlan-$node vtysh -c "show bgp l2vpn evpn summary"
+done
