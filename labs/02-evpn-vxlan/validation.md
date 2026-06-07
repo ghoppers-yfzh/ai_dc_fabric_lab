@@ -689,8 +689,6 @@ This EVPN/VXLAN validation stage is complete when:
 - RT is explicitly and consistently set to `65000:10010`
 - host overlay reachability works between `host1` and `host2`
 
-The next steps are:
 
-- document one EVPN/VXLAN failure test
-- expand the lab to additional leaves
-- later add anycast gateway, L3VNI, and VRF
+
+## Note: A dedicated spine-path failure test is skipped for now. The EVPN route table already showed remote Type-2 and Type-3 routes learned through both spine paths, which is enough evidence for the current lab stage. Failure convergence testing can be added later.
