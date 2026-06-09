@@ -844,3 +844,16 @@ This L2VNI validation stage is complete when:
 - minimal L3VNI / VRF POC validates `host1` to `host3` inter-subnet routing
 - EVPN Type-5 routes are visible for tenant prefixes
 - `show vrf vni` maps `tenant-a` to L3VNI `10099`
+## Explicit L3VNI Route Target Validation
+
+This validation confirms that L3VNI `10099` uses an explicit service-level route target.
+
+Expected result:
+
+- EVPN Type-5 routes for `192.168.10.0/24` and `192.168.20.0/24` carry `RT:65000:10099`.
+- `tenant-a` VRF still learns remote prefixes.
+- inter-subnet reachability between `host1` and `host3` still works.
+
+Evidence:
+
+- `outputs/l3vni-rt-cleanup.md`
