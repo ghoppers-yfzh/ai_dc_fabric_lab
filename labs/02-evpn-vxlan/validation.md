@@ -857,3 +857,48 @@ Expected result:
 Evidence:
 
 - `outputs/l3vni-rt-cleanup.md`
+### EVPN convergence note
+
+After a fresh deploy, inter-subnet ping may fail briefly even when the configuration is correct.
+
+This is because several control-plane and data-plane items need to converge:
+
+- EVPN BGP sessions
+- L2VNI Type-2 MAC routes
+- Type-3 IMET routes
+- L3VNI Type-5 prefix routes
+- Linux VRF route installation
+- bridge FDB entries
+- ARP / neighbor resolution
+
+A temporary `Destination Host Unreachable` from an anycast gateway can happen before the remote host MAC / neighbor / FDB state is fully learned.
+
+For validation, wait until `show vrf vni`, `ip route show vrf tenant-a`, and EVPN routes look stable before treating a ping failure as a real fault.
+
+## Four-leaf L3VNI / VRF Validation
+
+This validation confirms that L3VNI `10099` has been extended to all four leaves.
+
+Validated design:
+
+| Leaf | Local L2VNI | Local subnet | L3VNI |
+|---|---:|---|---:|
+| leaf1 | 10010 | 192.168.10.0/24 | 10099 |
+| leaf2 | 10010 | 192.168.10.0/24 | 10099 |
+| leaf3 | 10020 | 192.168.20.0/24 | 10099 |
+| leaf4 | 10020 | 192.168.20.0/24 | 10099 |
+
+Expected result:
+
+- all four leaves map `tenant-a` to L3VNI `10099`
+- EVPN Type-5 routes carry `RT:65000:10099`
+- hosts in VLAN 10 can reach hosts in VLAN 20
+- hosts in VLAN 20 can reach hosts in VLAN 10
+
+Evidence:
+
+- `outputs/four-leaf-l3vni-validation.md`
+
+Note:
+
+After a fresh deploy, inter-subnet reachability may fail briefly while EVPN routes, Linux VRF routes, bridge FDB entries, and ARP/neighbor state converge.

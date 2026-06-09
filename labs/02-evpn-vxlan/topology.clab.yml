@@ -65,7 +65,19 @@ topology:
         - ip link set vxlan10010 up
         - ip link set dev br10 address 00:00:00:00:10:01
         - ip addr add 192.168.10.1/24 dev br10
-    
+        - ip link add tenant-a type vrf table 10099
+        - ip link set tenant-a up
+        - ip link set br10 master tenant-a
+        - ip link add br10099 type bridge
+        - ip link set br10099 master tenant-a addrgenmode none
+        - ip link set br10099 address 00:00:00:99:00:02
+        - ip link add vxlan10099 type vxlan id 10099 local 10.255.1.2 dstport 4789 nolearning
+        - ip link set vxlan10099 address 00:00:00:99:00:02
+        - ip link set vxlan10099 master br10099 addrgenmode none
+        - ip link set vxlan10099 type bridge_slave neigh_suppress on learning off
+        - ip link set vxlan10099 up
+        - ip link set br10099 up
+
     leaf3:
       kind: linux
       image: frrouting/frr:latest
@@ -113,6 +125,18 @@ topology:
         - ip link set vxlan10020 up
         - ip link set dev br20 address 00:00:00:00:20:01
         - ip addr add 192.168.20.1/24 dev br20
+        - ip link add tenant-a type vrf table 10099
+        - ip link set tenant-a up
+        - ip link set br20 master tenant-a
+        - ip link add br10099 type bridge
+        - ip link set br10099 master tenant-a addrgenmode none
+        - ip link set br10099 address 00:00:00:99:00:04
+        - ip link add vxlan10099 type vxlan id 10099 local 10.255.1.4 dstport 4789 nolearning
+        - ip link set vxlan10099 address 00:00:00:99:00:04
+        - ip link set vxlan10099 master br10099 addrgenmode none
+        - ip link set vxlan10099 type bridge_slave neigh_suppress on learning off
+        - ip link set vxlan10099 up
+        - ip link set br10099 up
     
     host1:
       kind: linux
