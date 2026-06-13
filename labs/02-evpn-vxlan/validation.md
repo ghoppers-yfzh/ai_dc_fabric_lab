@@ -1,149 +1,111 @@
 # Validation Guide — EVPN/VXLAN Lab
 
-## 1. Purpose
+## Purpose
 
-This file documents the validation workflow for the EVPN/VXLAN lab.
+This file is the validation runbook and evidence index for Lab 02.
 
-The lab validates a routed eBGP underlay, EVPN/VXLAN L2VNI overlay services, explicit route-target design, distributed anycast gateways, VRF-based L3VNI routing, and four-leaf inter-subnet reachability.
+For the lab overview, topology summary, deployment steps, and learning relevance, see:
 
-This lab is part of the AI data center fabric learning path and focuses on practical EVPN/VXLAN fabric behavior using FRR, Linux bridge, Linux VRF, VXLAN interfaces, and Containerlab.
-
----
-
-## 2. Current Completed Scope
-
-Completed scope:
-
-- minimal EVPN/VXLAN lab topology
-- routed eBGP IPv4 unicast underlay
-- VTEP loopback reachability
-- static VXLAN data plane validation
-- EVPN BGP address-family
-- four-leaf EVPN/VXLAN L2VNI fabric
-- L2VNI `10010` for VLAN 10
-- L2VNI `10020` for VLAN 20
-- explicit L2VNI route-target design
-- EVPN Type-2 MAC routes
-- EVPN Type-3 IMET routes
-- distributed anycast gateway validation
-- same-subnet host-to-host reachability within each L2VNI
-- expected cross-subnet failure before L3VNI / VRF
-- minimal L3VNI / VRF POC between `leaf1` and `leaf3`
-- explicit L3VNI route-target cleanup
-- EVPN Type-5 route visibility
-- four-leaf L3VNI / VRF inter-subnet routing
-- inter-subnet reachability between VLAN 10 and VLAN 20 hosts
-
-Not included yet:
-
-- failure testing
-- multi-tenant routing
-- route leaking
-- external routing
-- automation
-- telemetry
-- symmetric IRB deep-dive beyond the current lab scope
-
----
-
-## 3. Validated Design Summary
-
-### Underlay
-
-| Component | Design |
-|---|---|
-| Routing protocol | eBGP IPv4 unicast |
-| Spine ASN | `65000` |
-| Leaf ASNs | `65101`–`65104` |
-| VTEP source | Leaf loopbacks |
-| Underlay role | Provide IP reachability between VTEP loopbacks |
-
-### Overlay L2 services
-
-| VLAN | L2VNI | Subnet | Hosts | RT |
-|---|---:|---|---|---|
-| 10 | 10010 | `192.168.10.0/24` | `host1`, `host2` | `65000:10010` |
-| 20 | 10020 | `192.168.20.0/24` | `host3`, `host4` | `65000:10020` |
-
-### Distributed anycast gateways
-
-| Service | Gateway IP | Gateway MAC |
-|---|---|---|
-| VLAN 10 / L2VNI 10010 | `192.168.10.1/24` | `00:00:00:00:10:01` |
-| VLAN 20 / L2VNI 10020 | `192.168.20.1/24` | `00:00:00:00:20:01` |
-
-### Overlay L3 service
-
-| Item | Value |
-|---|---|
-| VRF | `tenant-a` |
-| L3VNI | `10099` |
-| L3VNI RT | `65000:10099` |
-| Purpose | Inter-subnet routing between VLAN 10 and VLAN 20 |
-
----
-
-## 4. Deploy the Lab
-
-From the Lab 02 directory:
-
-```bash
-cd ~/ai_dc_fabric_lab/labs/02-evpn-vxlan
-sudo containerlab deploy -t topology.clab.yml
+```text
+README.md
 ```
 
-Check containers:
+This document focuses only on:
+
+- what to validate
+- which commands to run
+- what the expected result means
+- which output files should be saved as evidence
+- how to interpret key EVPN/VXLAN validation results
+
+---
+
+## Validation Scope
+
+Lab 02 validation covers the following stages:
+
+| Stage | Validation focus | Evidence |
+|---|---|---|
+| 1 | Container state | `outputs/container-status.md` |
+| 2 | eBGP IPv4 underlay | `outputs/underlay-bgp-summary.md` |
+| 3 | VTEP loopback reachability | `outputs/vtep-reachability.md` |
+| 4 | Static VXLAN data-plane check | `outputs/static-vxlan-data-plane.md` |
+| 5 | EVPN L2VNI control plane | `outputs/four-leaf-evpn-bgp-summary.md`, `outputs/four-leaf-evpn-vni.md`, `outputs/four-leaf-evpn-routes.md` |
+| 6 | Explicit L2VNI route-targets | `outputs/evpn-rt-cleanup.md` |
+| 7 | Anycast gateway | `outputs/anycast-gateway-validation.md`, `outputs/anycast-gateway-neighbors.md` |
+| 8 | Same-subnet L2VNI reachability | `outputs/two-l2vni-validation.md` |
+| 9 | L3VNI / VRF POC | `outputs/l3vni-vrf-poc.md` |
+| 10 | Explicit L3VNI route-target | `outputs/l3vni-rt-cleanup.md` |
+| 11 | Final four-leaf inter-subnet routing | `outputs/four-leaf-l3vni-validation.md` |
+
+---
+
+## Before Running Validation
+
+This file assumes the lab has already been deployed from the Lab 02 directory.
+
+Create the output directory if needed:
 
 ```bash
-docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}'
+mkdir -p outputs
+```
+
+Useful node list:
+
+```bash
+FABRIC_NODES="spine1 spine2 leaf1 leaf2 leaf3 leaf4"
+LEAF_NODES="leaf1 leaf2 leaf3 leaf4"
+HOST_NODES="host1 host2 host3 host4"
+```
+
+---
+
+## 1. Container Status
+
+Validate that all Lab 02 containers are running:
+
+```bash
+docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}' \
+  | grep 'clab-evpn-vxlan' \
+  | tee outputs/container-status.md
 ```
 
 Expected result:
 
-- `spine1` is running
-- `spine2` is running
-- `leaf1` is running
-- `leaf2` is running
-- `leaf3` is running
-- `leaf4` is running
-- `host1` is running
-- `host2` is running
-- `host3` is running
-- `host4` is running
+- `spine1` and `spine2` are running
+- `leaf1` to `leaf4` are running
+- `host1` to `host4` are running
+
+Evidence:
+
+```text
+outputs/container-status.md
+```
 
 ---
 
-## 5. Underlay BGP Validation
+## 2. Underlay BGP Validation
 
-Check IPv4 unicast BGP sessions:
+Validate IPv4 unicast eBGP sessions:
 
 ```bash
-for node in spine1 spine2 leaf1 leaf2 leaf3 leaf4; do
+{
+  echo "# Underlay BGP Summary"
   echo
-  echo "===== $node IPv4 BGP ====="
-  docker exec clab-evpn-vxlan-$node vtysh -c "show bgp ipv4 unicast summary"
-done
+
+  for node in spine1 spine2 leaf1 leaf2 leaf3 leaf4; do
+    echo "## $node"
+    docker exec clab-evpn-vxlan-$node vtysh -c "show bgp ipv4 unicast summary"
+    echo
+  done
+} | tee outputs/underlay-bgp-summary.md
 ```
 
 Expected result:
 
 - each spine has established BGP sessions to all leaves
 - each leaf has established BGP sessions to both spines
-- loopback routes are advertised through the underlay
-
-Save output:
-
-```bash
-{
-  echo "# Underlay BGP Summary"
-  echo
-  for node in spine1 spine2 leaf1 leaf2 leaf3 leaf4; do
-    echo "## $node"
-    docker exec clab-evpn-vxlan-$node vtysh -c "show bgp ipv4 unicast summary"
-    echo
-  done
-} > outputs/underlay-bgp-summary.md
-```
+- leaf loopback routes are reachable through the routed underlay
 
 Evidence:
 
@@ -153,55 +115,44 @@ outputs/underlay-bgp-summary.md
 
 ---
 
-## 6. VTEP Loopback Reachability
+## 3. VTEP Loopback Reachability
 
-The leaf loopbacks are used as VTEP source addresses.
-
-Validate VTEP loopback reachability:
-
-```bash
-docker exec clab-evpn-vxlan-leaf1 ping -c 3 -I 10.255.1.1 10.255.1.2
-docker exec clab-evpn-vxlan-leaf1 ping -c 3 -I 10.255.1.1 10.255.1.3
-docker exec clab-evpn-vxlan-leaf1 ping -c 3 -I 10.255.1.1 10.255.1.4
-```
-
-Expected result:
-
-- remote VTEP loopbacks are reachable
-- packets are routed through the underlay
-- packets are not bound to the local loopback interface
-
-Important note:
-
-Use the loopback IP as the source address:
-
-```bash
-ping -I 10.255.1.1 10.255.1.2
-```
-
-Do not use the loopback interface name:
-
-```bash
-ping -I lo 10.255.1.2
-```
-
-Using `-I 10.255.1.1` sets the source IP and allows the routing table to choose the outgoing underlay interface.
-
-Using `-I lo` binds the packet to the loopback interface and does not test the routed underlay path.
-
-Save output:
+Validate remote VTEP loopback reachability from `leaf1`:
 
 ```bash
 {
   echo "# VTEP Reachability"
   echo
+
   for remote in 10.255.1.2 10.255.1.3 10.255.1.4; do
-    echo
     echo "## leaf1 to $remote"
     docker exec clab-evpn-vxlan-leaf1 ping -c 3 -I 10.255.1.1 $remote
+    echo
   done
-} > outputs/vtep-reachability.md
+} | tee outputs/vtep-reachability.md
 ```
+
+Expected result:
+
+- remote VTEP loopbacks are reachable
+- packets use the underlay routing table
+- packets are sourced from the local VTEP loopback IP
+
+Important note:
+
+Use the loopback IP as the source:
+
+```bash
+ping -I 10.255.1.1 10.255.1.2
+```
+
+Do not bind the test to the loopback interface name:
+
+```bash
+ping -I lo 10.255.1.2
+```
+
+Using `-I 10.255.1.1` sets the source IP and still allows Linux routing to choose the correct underlay interface. Using `-I lo` binds traffic to the loopback interface and does not validate routed underlay forwarding.
 
 Evidence:
 
@@ -211,17 +162,17 @@ outputs/vtep-reachability.md
 
 ---
 
-## 7. Static VXLAN Data Plane Validation
+## 4. Static VXLAN Data-Plane Evidence
 
-Before relying on EVPN as the control plane, the VXLAN data plane was validated with static FDB entries.
+This was an earlier validation step before relying on EVPN as the control plane.
 
-This confirmed:
+It confirmed:
 
-- Linux bridge behavior
+- Linux bridge forwarding
 - VXLAN interface behavior
 - VTEP source loopback behavior
 - underlay reachability between VTEPs
-- host forwarding across VXLAN
+- host forwarding across a VXLAN tunnel
 
 Evidence:
 
@@ -229,52 +180,69 @@ Evidence:
 outputs/static-vxlan-data-plane.md
 ```
 
+This step does not need to be rerun after the EVPN control plane is working unless the VXLAN dataplane is being debugged again.
+
 ---
 
-## 8. EVPN L2VNI Overlay Validation
+## 5. EVPN Control Plane Validation
 
-This validation confirms that EVPN/VXLAN works for L2VNI services.
-
-Core commands:
+Validate EVPN BGP sessions:
 
 ```bash
-for node in spine1 spine2 leaf1 leaf2 leaf3 leaf4; do
+{
+  echo "# EVPN BGP Summary"
   echo
-  echo "===== $node EVPN BGP ====="
-  docker exec clab-evpn-vxlan-$node vtysh -c "show bgp l2vpn evpn summary"
-done
+
+  for node in spine1 spine2 leaf1 leaf2 leaf3 leaf4; do
+    echo "## $node"
+    docker exec clab-evpn-vxlan-$node vtysh -c "show bgp l2vpn evpn summary"
+    echo
+  done
+} | tee outputs/four-leaf-evpn-bgp-summary.md
 ```
 
-```bash
-for leaf in leaf1 leaf2 leaf3 leaf4; do
-  echo
-  echo "===== $leaf EVPN VNI ====="
-  docker exec clab-evpn-vxlan-$leaf vtysh -c "show evpn vni"
-done
-```
+Validate VNI discovery on leaves:
 
 ```bash
-for leaf in leaf1 leaf2 leaf3 leaf4; do
+{
+  echo "# EVPN VNI Summary"
   echo
-  echo "===== $leaf EVPN routes ====="
-  docker exec clab-evpn-vxlan-$leaf vtysh -c "show bgp l2vpn evpn"
-done
+
+  for leaf in leaf1 leaf2 leaf3 leaf4; do
+    echo "## $leaf"
+    docker exec clab-evpn-vxlan-$leaf vtysh -c "show evpn vni"
+    echo
+  done
+} | tee outputs/four-leaf-evpn-vni.md
+```
+
+Save EVPN routes:
+
+```bash
+{
+  echo "# EVPN Routes"
+  echo
+
+  for leaf in leaf1 leaf2 leaf3 leaf4; do
+    echo "## $leaf"
+    docker exec clab-evpn-vxlan-$leaf vtysh -c "show bgp l2vpn evpn"
+    echo
+  done
+} | tee outputs/four-leaf-evpn-routes.md
 ```
 
 Expected result:
 
-- EVPN BGP sessions are established
-- L2VNI services are discovered
-- remote VTEPs are visible
-- Type-2 MAC routes are present
-- Type-3 IMET routes are present
-- expected RT values are present
+- EVPN address-family sessions are established
+- L2VNIs are discovered on the correct leaves
+- Type-2 MAC/IP routes are visible
+- Type-3 IMET routes are visible
+- Type-5 IP prefix routes are visible after L3VNI / VRF is configured
+- remote VTEPs are visible for the relevant VNIs
 
 Evidence:
 
 ```text
-outputs/evpn-bgp-summary.md
-outputs/evpn-routes.md
 outputs/four-leaf-evpn-bgp-summary.md
 outputs/four-leaf-evpn-vni.md
 outputs/four-leaf-evpn-routes.md
@@ -282,32 +250,35 @@ outputs/four-leaf-evpn-routes.md
 
 ---
 
-## 9. Explicit L2VNI Route Target Validation
+## 6. L2VNI Route-Target Validation
 
-The lab uses explicit route-targets for clarity.
+Validate that the L2VNI routes carry the expected route-targets:
 
-Current L2VNI route-target design:
-
-| Service | RT |
+| Service | Expected RT |
 |---|---|
 | VLAN 10 / L2VNI 10010 | `65000:10010` |
 | VLAN 20 / L2VNI 10020 | `65000:10020` |
 
-Validation command:
+Command:
 
 ```bash
-for leaf in leaf1 leaf2 leaf3 leaf4; do
+{
+  echo "# L2VNI Route Target Validation"
   echo
-  echo "===== $leaf EVPN routes ====="
-  docker exec clab-evpn-vxlan-$leaf vtysh -c "show bgp l2vpn evpn"
-done
+
+  for leaf in leaf1 leaf2 leaf3 leaf4; do
+    echo "## $leaf"
+    docker exec clab-evpn-vxlan-$leaf vtysh -c "show bgp l2vpn evpn"
+    echo
+  done
+} | tee outputs/evpn-rt-cleanup.md
 ```
 
 Expected result:
 
 - VNI `10010` routes carry `RT:65000:10010`
 - VNI `10020` routes carry `RT:65000:10020`
-- route import/export behavior matches the L2VNI service membership
+- route import/export behavior matches L2VNI service membership
 
 Evidence:
 
@@ -317,31 +288,67 @@ outputs/evpn-rt-cleanup.md
 
 ---
 
-## 10. Anycast Gateway Validation
+## 7. Anycast Gateway Validation
 
-This validation confirms that distributed anycast gateways can be added to the L2VNI services.
-
-Validation commands:
+Validate host routing tables:
 
 ```bash
-for host in host1 host2 host3 host4; do
+{
+  echo "# Host Route Tables"
   echo
-  echo "===== $host route table ====="
-  docker exec clab-evpn-vxlan-$host ip route
-done
+
+  for host in host1 host2 host3 host4; do
+    echo "## $host"
+    docker exec clab-evpn-vxlan-$host ip route
+    echo
+  done
+} | tee outputs/anycast-gateway-validation.md
 ```
 
+Validate gateway reachability:
+
 ```bash
-docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.10.1
-docker exec clab-evpn-vxlan-host2 ping -c 3 192.168.10.1
-docker exec clab-evpn-vxlan-host3 ping -c 3 192.168.20.1
-docker exec clab-evpn-vxlan-host4 ping -c 3 192.168.20.1
+{
+  echo "# Anycast Gateway Reachability"
+  echo
+
+  echo "## host1 to VLAN 10 gateway"
+  docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.10.1
+  echo
+
+  echo "## host2 to VLAN 10 gateway"
+  docker exec clab-evpn-vxlan-host2 ping -c 3 192.168.10.1
+  echo
+
+  echo "## host3 to VLAN 20 gateway"
+  docker exec clab-evpn-vxlan-host3 ping -c 3 192.168.20.1
+  echo
+
+  echo "## host4 to VLAN 20 gateway"
+  docker exec clab-evpn-vxlan-host4 ping -c 3 192.168.20.1
+} | tee -a outputs/anycast-gateway-validation.md
+```
+
+Optional neighbor check:
+
+```bash
+{
+  echo "# Host Neighbor Tables"
+  echo
+
+  for host in host1 host2 host3 host4; do
+    echo "## $host"
+    docker exec clab-evpn-vxlan-$host ip neigh
+    echo
+  done
+} | tee outputs/anycast-gateway-neighbors.md
 ```
 
 Expected result:
 
-- each host has a default route via its local anycast gateway
+- each host has a default route via the local anycast gateway
 - each host can reach its gateway IP
+- anycast gateway MAC learning is visible in neighbor / bridge state where applicable
 - same-subnet overlay reachability still works
 
 Evidence:
@@ -353,22 +360,22 @@ outputs/anycast-gateway-neighbors.md
 
 ---
 
-## 11. Two-L2VNI Validation
+## 8. Same-Subnet L2VNI Reachability
 
-This validation confirms that the EVPN/VXLAN fabric can support two independent L2VNI services.
-
-Validated services:
-
-| VLAN | L2VNI | Subnet | Hosts | RT |
-|---|---:|---|---|---|
-| 10 | 10010 | `192.168.10.0/24` | `host1`, `host2` | `65000:10010` |
-| 20 | 10020 | `192.168.20.0/24` | `host3`, `host4` | `65000:10020` |
-
-Validation commands:
+Validate same-subnet connectivity within each L2VNI:
 
 ```bash
-docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.10.12
-docker exec clab-evpn-vxlan-host3 ping -c 3 192.168.20.14
+{
+  echo "# Same-subnet L2VNI Reachability"
+  echo
+
+  echo "## host1 to host2 / VLAN 10"
+  docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.10.12
+  echo
+
+  echo "## host3 to host4 / VLAN 20"
+  docker exec clab-evpn-vxlan-host3 ping -c 3 192.168.20.14
+} | tee outputs/two-l2vni-validation.md
 ```
 
 Expected result:
@@ -376,18 +383,19 @@ Expected result:
 - `host1` can reach `host2` within VLAN 10 / L2VNI 10010
 - `host3` can reach `host4` within VLAN 20 / L2VNI 10020
 
-Cross-subnet validation before L3VNI:
+Evidence:
 
-```bash
-docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.20.13
-docker exec clab-evpn-vxlan-host3 ping -c 3 192.168.10.11
+```text
+outputs/two-l2vni-validation.md
 ```
 
-Expected result:
+### Historical negative test before L3VNI
 
-- cross-subnet ping should fail before L3VNI / VRF is configured
+Before L3VNI / VRF was configured, cross-subnet traffic was expected to fail.
 
-This is the correct result at this stage because L2VNI only provides same-subnet extension.
+This historical result proves that L2VNI alone only provides same-subnet extension.
+
+Do not rerun this as a failure test after the final L3VNI design is enabled. In the final design, cross-subnet traffic should succeed.
 
 Evidence:
 
@@ -397,254 +405,61 @@ outputs/two-l2vni-validation.md
 
 ---
 
-## 12. Minimal L3VNI / VRF POC Validation
+## 9. L3VNI / VRF Validation
 
-This validation confirms that a minimal L3VNI / VRF inter-subnet routing POC works between VLAN 10 and VLAN 20.
-
-Validated POC scope:
-
-| Item | Value |
-|---|---|
-| VRF | `tenant-a` |
-| L3VNI | `10099` |
-| Source subnet | `192.168.10.0/24` |
-| Destination subnet | `192.168.20.0/24` |
-| Source leaf | `leaf1` |
-| Destination leaf | `leaf3` |
-
-Expected result:
-
-- `tenant-a` exists on `leaf1` and `leaf3`
-- `tenant-a` is mapped to L3VNI `10099`
-- `vxlan10099` and `br10099` are up
-- `leaf1` learns `192.168.20.0/24` through BGP EVPN
-- `leaf3` learns `192.168.10.0/24` through BGP EVPN
-- EVPN Type-5 routes are visible
-- `host1` can reach `host3` across subnets
-- `host3` can reach `host1` across subnets
-
-Validation commands:
-
-```bash
-for leaf in leaf1 leaf3; do
-  echo
-  echo "===== $leaf VRF routes ====="
-  docker exec clab-evpn-vxlan-$leaf ip route show vrf tenant-a
-
-  echo
-  echo "===== $leaf interfaces in tenant-a ====="
-  docker exec clab-evpn-vxlan-$leaf ip link show master tenant-a
-done
-```
-
-```bash
-docker exec clab-evpn-vxlan-leaf1 vtysh -c "show vrf"
-docker exec clab-evpn-vxlan-leaf3 vtysh -c "show vrf"
-
-docker exec clab-evpn-vxlan-leaf1 vtysh -c "show vrf vni"
-docker exec clab-evpn-vxlan-leaf3 vtysh -c "show vrf vni"
-```
-
-```bash
-docker exec clab-evpn-vxlan-leaf1 vtysh -c "show bgp l2vpn evpn"
-docker exec clab-evpn-vxlan-leaf3 vtysh -c "show bgp l2vpn evpn"
-```
-
-```bash
-docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.20.13
-docker exec clab-evpn-vxlan-host3 ping -c 3 192.168.10.11
-```
-
-Save output:
+Validate VRF-to-L3VNI mapping:
 
 ```bash
 {
-  echo "# L3VNI VRF Inter-subnet Routing POC"
+  echo "# VRF VNI Mapping"
   echo
 
-  echo "## leaf1 VRF routes"
-  docker exec clab-evpn-vxlan-leaf1 ip route show vrf tenant-a
-  echo
-
-  echo "## leaf3 VRF routes"
-  docker exec clab-evpn-vxlan-leaf3 ip route show vrf tenant-a
-  echo
-
-  echo "## leaf1 show vrf vni"
-  docker exec clab-evpn-vxlan-leaf1 vtysh -c "show vrf vni"
-  echo
-
-  echo "## leaf3 show vrf vni"
-  docker exec clab-evpn-vxlan-leaf3 vtysh -c "show vrf vni"
-  echo
-
-  echo "## leaf1 EVPN routes"
-  docker exec clab-evpn-vxlan-leaf1 vtysh -c "show bgp l2vpn evpn"
-  echo
-
-  echo "## leaf3 EVPN routes"
-  docker exec clab-evpn-vxlan-leaf3 vtysh -c "show bgp l2vpn evpn"
-  echo
-
-  echo "## host1 to host3"
-  docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.20.13
-  echo
-
-  echo "## host3 to host1"
-  docker exec clab-evpn-vxlan-host3 ping -c 3 192.168.10.11
-} > outputs/l3vni-vrf-poc.md
+  for leaf in leaf1 leaf2 leaf3 leaf4; do
+    echo "## $leaf"
+    docker exec clab-evpn-vxlan-$leaf vtysh -c "show vrf vni"
+    echo
+  done
+} | tee outputs/four-leaf-l3vni-validation.md
 ```
 
-Evidence:
+Validate tenant VRF routes:
 
-```text
-outputs/l3vni-vrf-poc.md
+```bash
+{
+  echo
+  echo "# Tenant VRF Routes"
+  echo
+
+  for leaf in leaf1 leaf2 leaf3 leaf4; do
+    echo "## $leaf"
+    docker exec clab-evpn-vxlan-$leaf ip route show vrf tenant-a
+    echo
+  done
+} | tee -a outputs/four-leaf-l3vni-validation.md
 ```
 
----
+Validate EVPN routes, including Type-5 prefixes:
 
-## 13. Explicit L3VNI Route Target Validation
+```bash
+{
+  echo
+  echo "# EVPN Routes"
+  echo
 
-This validation confirms that L3VNI `10099` uses an explicit service-level route target.
-
-Current L3VNI route-target design:
-
-| Service | RT |
-|---|---|
-| VRF `tenant-a` / L3VNI 10099 | `65000:10099` |
-
-Expected result:
-
-- EVPN Type-5 routes for `192.168.10.0/24` and `192.168.20.0/24` carry `RT:65000:10099`
-- `tenant-a` VRF still learns remote prefixes
-- inter-subnet reachability between `host1` and `host3` still works
-
-Evidence:
-
-```text
-outputs/l3vni-rt-cleanup.md
+  for leaf in leaf1 leaf2 leaf3 leaf4; do
+    echo "## $leaf"
+    docker exec clab-evpn-vxlan-$leaf vtysh -c "show bgp l2vpn evpn"
+    echo
+  done
+} | tee -a outputs/four-leaf-l3vni-validation.md
 ```
-
----
-
-## 14. Four-leaf L3VNI / VRF Validation
-
-This validation confirms that L3VNI `10099` has been extended to all four leaves.
-
-Validated design:
-
-| Leaf | Local L2VNI | Local subnet | L3VNI |
-|---|---:|---|---:|
-| `leaf1` | 10010 | `192.168.10.0/24` | 10099 |
-| `leaf2` | 10010 | `192.168.10.0/24` | 10099 |
-| `leaf3` | 10020 | `192.168.20.0/24` | 10099 |
-| `leaf4` | 10020 | `192.168.20.0/24` | 10099 |
 
 Expected result:
 
 - all four leaves map `tenant-a` to L3VNI `10099`
-- EVPN Type-5 routes carry `RT:65000:10099`
-- hosts in VLAN 10 can reach hosts in VLAN 20
-- hosts in VLAN 20 can reach hosts in VLAN 10
-
-Validation commands:
-
-```bash
-for leaf in leaf1 leaf2 leaf3 leaf4; do
-  echo
-  echo "===== $leaf show vrf vni ====="
-  docker exec clab-evpn-vxlan-$leaf vtysh -c "show vrf vni"
-done
-```
-
-```bash
-for leaf in leaf1 leaf2 leaf3 leaf4; do
-  echo
-  echo "===== $leaf VRF routes ====="
-  docker exec clab-evpn-vxlan-$leaf ip route show vrf tenant-a
-done
-```
-
-```bash
-for leaf in leaf1 leaf2 leaf3 leaf4; do
-  echo
-  echo "===== $leaf EVPN routes ====="
-  docker exec clab-evpn-vxlan-$leaf vtysh -c "show bgp l2vpn evpn"
-done
-```
-
-```bash
-docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.20.13
-docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.20.14
-
-docker exec clab-evpn-vxlan-host2 ping -c 3 192.168.20.13
-docker exec clab-evpn-vxlan-host2 ping -c 3 192.168.20.14
-
-docker exec clab-evpn-vxlan-host3 ping -c 3 192.168.10.11
-docker exec clab-evpn-vxlan-host3 ping -c 3 192.168.10.12
-
-docker exec clab-evpn-vxlan-host4 ping -c 3 192.168.10.11
-docker exec clab-evpn-vxlan-host4 ping -c 3 192.168.10.12
-```
-
-Save output:
-
-```bash
-{
-  echo "# Four-leaf L3VNI VRF Validation"
-  echo
-
-  echo "## VRF VNI mapping"
-  for leaf in leaf1 leaf2 leaf3 leaf4; do
-    echo
-    echo "### $leaf"
-    docker exec clab-evpn-vxlan-$leaf vtysh -c "show vrf vni"
-  done
-
-  echo
-  echo "## VRF routes"
-  for leaf in leaf1 leaf2 leaf3 leaf4; do
-    echo
-    echo "### $leaf"
-    docker exec clab-evpn-vxlan-$leaf ip route show vrf tenant-a
-  done
-
-  echo
-  echo "## EVPN Type-5 / EVPN routes"
-  for leaf in leaf1 leaf2 leaf3 leaf4; do
-    echo
-    echo "### $leaf"
-    docker exec clab-evpn-vxlan-$leaf vtysh -c "show bgp l2vpn evpn"
-  done
-
-  echo
-  echo "## Cross-subnet host reachability"
-  echo
-  echo "### host1 to host3"
-  docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.20.13
-  echo
-  echo "### host1 to host4"
-  docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.20.14
-  echo
-  echo "### host2 to host3"
-  docker exec clab-evpn-vxlan-host2 ping -c 3 192.168.20.13
-  echo
-  echo "### host2 to host4"
-  docker exec clab-evpn-vxlan-host2 ping -c 3 192.168.20.14
-  echo
-  echo "### host3 to host1"
-  docker exec clab-evpn-vxlan-host3 ping -c 3 192.168.10.11
-  echo
-  echo "### host3 to host2"
-  docker exec clab-evpn-vxlan-host3 ping -c 3 192.168.10.12
-  echo
-  echo "### host4 to host1"
-  docker exec clab-evpn-vxlan-host4 ping -c 3 192.168.10.11
-  echo
-  echo "### host4 to host2"
-  docker exec clab-evpn-vxlan-host4 ping -c 3 192.168.10.12
-} > outputs/four-leaf-l3vni-validation.md
-```
+- remote tenant prefixes are installed in the `tenant-a` VRF
+- EVPN Type-5 routes are visible
+- Type-5 routes for tenant prefixes carry the L3VNI route-target `65000:10099`
 
 Evidence:
 
@@ -654,115 +469,154 @@ outputs/four-leaf-l3vni-validation.md
 
 ---
 
-## 15. Key Interpretation Notes
+## 10. L3VNI Route-Target Validation
 
-### RD and RT have different roles
+Validate the L3VNI route-target:
 
-RD and RT are not the same thing.
+| Service | Expected RT |
+|---|---|
+| VRF `tenant-a` / L3VNI 10099 | `65000:10099` |
+
+Command:
+
+```bash
+{
+  echo "# L3VNI Route Target Validation"
+  echo
+
+  for leaf in leaf1 leaf2 leaf3 leaf4; do
+    echo "## $leaf"
+    docker exec clab-evpn-vxlan-$leaf vtysh -c "show bgp l2vpn evpn"
+    echo
+  done
+} | tee outputs/l3vni-rt-cleanup.md
+```
+
+Expected result:
+
+- EVPN Type-5 routes for tenant prefixes carry `RT:65000:10099`
+- the `tenant-a` VRF still learns remote prefixes
+- inter-subnet reachability still works
+
+Evidence:
+
+```text
+outputs/l3vni-rt-cleanup.md
+```
+
+---
+
+## 11. Final Inter-Subnet Reachability
+
+Validate final four-leaf inter-subnet reachability:
+
+```bash
+{
+  echo
+  echo "# Cross-subnet Host Reachability"
+  echo
+
+  echo "## host1 to host3"
+  docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.20.13
+  echo
+
+  echo "## host1 to host4"
+  docker exec clab-evpn-vxlan-host1 ping -c 3 192.168.20.14
+  echo
+
+  echo "## host2 to host3"
+  docker exec clab-evpn-vxlan-host2 ping -c 3 192.168.20.13
+  echo
+
+  echo "## host2 to host4"
+  docker exec clab-evpn-vxlan-host2 ping -c 3 192.168.20.14
+  echo
+
+  echo "## host3 to host1"
+  docker exec clab-evpn-vxlan-host3 ping -c 3 192.168.10.11
+  echo
+
+  echo "## host3 to host2"
+  docker exec clab-evpn-vxlan-host3 ping -c 3 192.168.10.12
+  echo
+
+  echo "## host4 to host1"
+  docker exec clab-evpn-vxlan-host4 ping -c 3 192.168.10.11
+  echo
+
+  echo "## host4 to host2"
+  docker exec clab-evpn-vxlan-host4 ping -c 3 192.168.10.12
+} | tee -a outputs/four-leaf-l3vni-validation.md
+```
+
+Expected result:
+
+- hosts in VLAN 10 can reach hosts in VLAN 20
+- hosts in VLAN 20 can reach hosts in VLAN 10
+- successful reachability confirms L3VNI / VRF inter-subnet routing across the EVPN/VXLAN fabric
+
+Evidence:
+
+```text
+outputs/four-leaf-l3vni-validation.md
+```
+
+---
+
+## 12. Optional Bridge / FDB Checks
+
+Use these commands when troubleshooting VXLAN forwarding or MAC learning:
+
+```bash
+{
+  echo "# Bridge FDB"
+  echo
+
+  for leaf in leaf1 leaf2 leaf3 leaf4; do
+    echo "## $leaf"
+    docker exec clab-evpn-vxlan-$leaf bridge fdb show
+    echo
+  done
+} | tee outputs/four-leaf-bridge-fdb.md
+```
+
+Evidence:
+
+```text
+outputs/four-leaf-bridge-fdb.md
+```
+
+---
+
+## Key Interpretation Notes
+
+### RD and RT
 
 ```text
 RD = makes EVPN routes unique in the BGP table
-RT = controls import/export membership for an EVPN service
+RT = controls EVPN service import/export membership
 ```
 
-A useful rule:
+Useful rule:
 
 ```text
 RD can be different per VTEP.
 RT should be consistent for the same EVPN service.
 ```
 
-### EVPN Type-2 routes are MAC reachability routes
-
-Type-2 routes advertise MAC reachability.
-
-They tell a VTEP where a MAC address is located.
-
-### EVPN Type-3 routes identify remote VTEPs
-
-Type-3 routes are IMET routes.
-
-They identify which remote VTEPs participate in a VNI and help build the BUM flood list.
-
-A useful rule:
+### EVPN route types used in this lab
 
 ```text
-Type-2 tells us where MAC addresses are.
-Type-3 tells us which remote VTEPs participate in the VNI.
+Type-2 = MAC/IP reachability
+Type-3 = IMET / remote VTEP participation in a VNI
+Type-5 = IP prefix reachability for routed tenant traffic
 ```
 
-### EVPN Type-5 routes provide IP prefix reachability
+Same-subnet L2VNI forwarding mainly depends on Type-2 and Type-3 routes.
 
-In the earlier L2VNI stage, EVPN Type-2 and Type-3 routes were enough for same-subnet reachability.
+Inter-subnet routing with L3VNI depends on Type-5 prefix routes and remote router MAC information.
 
-For inter-subnet routing, the leaves need to know which remote VTEP owns which IP prefix.
-
-This is provided by EVPN Type-5 routes.
-
-Example:
-
-```text
-[5]:[0]:[24]:[192.168.20.0]
-  Next Hop: 10.255.1.3
-  Rmac: 00:00:00:99:00:03
-```
-
-Interpretation:
-
-```text
-192.168.20.0/24 is reachable behind remote VTEP 10.255.1.3.
-The remote router MAC for L3VNI forwarding is 00:00:00:99:00:03.
-```
-
-Useful rule:
-
-```text
-Type-2 = MAC reachability
-Type-3 = remote VTEP participation in a VNI
-Type-5 = IP prefix reachability
-```
-
-### Multiple remote paths are expected with two spines
-
-Remote EVPN routes may appear through both spines.
-
-This is expected because the same remote EVPN route can be received through multiple spine paths.
-
-A useful rule:
-
-```text
-BGP EVPN chooses a best control-plane path.
-VXLAN outer IP traffic still follows the underlay routing table.
-```
-
-### L3VNI builds the tenant routing layer
-
-The lab has two L2VNIs:
-
-```text
-VLAN 10 / L2VNI 10010 / 192.168.10.0/24
-VLAN 20 / L2VNI 10020 / 192.168.20.0/24
-```
-
-These L2VNIs provide same-subnet extension only.
-
-The L3VNI provides the routed tenant backbone between subnets.
-
-In this lab:
-
-```text
-VRF: tenant-a
-L3VNI: 10099
-```
-
-Interpretation:
-
-```text
-tenant-a is the tenant routing table.
-VNI 10099 is the EVPN/VXLAN routed service used by tenant-a.
-```
-
-Useful rule:
+### L2VNI, L3VNI, and VRF
 
 ```text
 L2VNI = bridge domain / subnet extension
@@ -770,32 +624,7 @@ L3VNI = routed tenant backbone
 VRF = tenant routing table
 ```
 
-### Why a VRF is needed
-
-A VRF creates an independent routing table for a tenant or routing domain.
-
-In this lab, `tenant-a` contains:
-
-```text
-192.168.10.0/24
-192.168.20.0/24
-```
-
-Because both subnets are in the same VRF, they can be routed together after L3VNI is configured.
-
-The VRF also provides tenant separation. A future `tenant-b` could use overlapping IP addresses without mixing routes with `tenant-a`.
-
-Useful rule:
-
-```text
-VRF = the tenant's Layer 3 routing world
-```
-
-### Why VNI 10099 is needed
-
-VNI `10099` is the L3VNI for `tenant-a`.
-
-It is different from the L2VNIs:
+In this lab:
 
 ```text
 VNI 10010 = L2VNI for VLAN 10 / 192.168.10.0/24
@@ -803,168 +632,76 @@ VNI 10020 = L2VNI for VLAN 20 / 192.168.20.0/24
 VNI 10099 = L3VNI for tenant-a routing
 ```
 
-The L3VNI carries routed traffic between subnets inside the same tenant VRF.
-
-Useful rule:
+### br10099 and vxlan10099
 
 ```text
-L2VNI carries bridged host traffic.
-L3VNI carries routed tenant traffic.
-```
-
-### br10099 and vxlan10099 roles
-
-`br10099` is the L3-SVI for the L3VNI.
-
-It should not be used as a host gateway subnet interface.
-
-In this lab:
-
-```text
-br10    = VLAN 10 anycast gateway, has 192.168.10.1/24
-br20    = VLAN 20 anycast gateway, has 192.168.20.1/24
-br10099 = L3VNI SVI, no host subnet IP
-```
-
-`vxlan10099` is the VXLAN tunnel interface for L3VNI `10099`.
-
-The relationship is:
-
-```text
-tenant-a VRF
-  ├── br10     -> local VLAN 10 gateway
-  ├── br20     -> local VLAN 20 gateway
-  └── br10099  -> L3VNI SVI
-        └── vxlan10099 -> VXLAN encapsulation for routed tenant traffic
+br10    = VLAN 10 host gateway
+br20    = VLAN 20 host gateway
+br10099 = L3VNI routing anchor
+vxlan10099 = VXLAN tunnel interface for L3VNI 10099
 ```
 
 Useful rule:
 
 ```text
-br10/br20 face the hosts.
+br10/br20 face hosts.
 br10099/vxlan10099 face the routed VXLAN overlay.
 ```
 
-### Inter-subnet forwarding sequence
+`br10099` should not be treated as a normal host-facing gateway interface.
 
-Example: `host1` pings `host3`.
+### Rmac in EVPN Type-5 routes
 
-```text
-host1: 192.168.10.11
-host3: 192.168.20.13
-```
-
-Forwarding sequence:
-
-```text
-1. host1 sees that 192.168.20.13 is outside 192.168.10.0/24.
-2. host1 sends the packet to its default gateway 192.168.10.1.
-3. leaf1 receives the packet on br10.
-4. br10 belongs to VRF tenant-a, so leaf1 performs a tenant-a routing lookup.
-5. leaf1 finds 192.168.20.0/24 via a remote VTEP using br10099.
-6. leaf1 encapsulates the routed packet into VXLAN VNI 10099 using vxlan10099.
-7. The underlay forwards the outer packet from the local VTEP to the remote VTEP.
-8. The remote leaf receives and decapsulates the VXLAN packet.
-9. The remote leaf uses the L3VNI and remote router MAC information to place the packet into tenant-a.
-10. The remote leaf forwards the packet out the destination L2VNI toward the host.
-```
-
-Return traffic follows the reverse logic:
-
-```text
-host3 -> local anycast gateway -> tenant-a route lookup -> L3VNI 10099 -> remote leaf -> destination L2VNI -> host1
-```
-
-Useful rule:
-
-```text
-The host sends traffic to the local anycast gateway.
-The local leaf routes inside the VRF.
-The L3VNI carries the routed packet to the remote VTEP.
-The remote leaf delivers it into the destination L2VNI.
-```
-
-### br10099 is not a user-facing gateway
-
-`br10` and `br20` are user-facing gateway interfaces.
-
-They have subnet gateway IP addresses:
-
-```text
-br10: 192.168.10.1/24
-br20: 192.168.20.1/24
-```
-
-`br10099` should not have a host subnet gateway IP.
-
-Its job is to act as the L3VNI SVI / anchor that allows FRR and the Linux dataplane to associate:
-
-```text
-VRF tenant-a
-L3VNI 10099
-vxlan10099
-router MAC / Rmac
-EVPN Type-5 routes
-```
-
-Useful rule:
-
-```text
-br10/br20 = local host gateway interfaces
-br10099   = L3VNI routing anchor, not a host gateway
-```
-
-### Rmac is the remote router MAC used for routed VXLAN forwarding
-
-EVPN Type-5 routes include an `Rmac` value.
+Type-5 routes include a remote router MAC.
 
 Example:
 
 ```text
-Rmac:00:00:00:99:00:03
+Next Hop: 10.255.1.3
+Rmac: 00:00:00:99:00:03
 ```
 
 Interpretation:
-
-```text
-The prefix is reachable behind remote VTEP 10.255.1.3.
-When sending routed tenant traffic to that VTEP, use 00:00:00:99:00:03 as the remote router MAC.
-```
-
-Useful rule:
 
 ```text
 Next Hop = remote VTEP IP
 Rmac     = remote router MAC for L3VNI forwarding
 ```
 
-This is why the MAC address on `br10099` matters. It becomes part of the EVPN routing information used by other VTEPs.
+### Multiple EVPN paths through two spines
+
+Seeing the same remote EVPN route through both spines is expected.
+
+Useful rule:
+
+```text
+BGP EVPN chooses the control-plane best path.
+VXLAN outer IP traffic follows the underlay routing table.
+```
 
 ### EVPN convergence note
 
 After a fresh deploy, inter-subnet ping may fail briefly even when the configuration is correct.
 
-This is because several control-plane and data-plane items need to converge:
+Wait until these are stable before treating a ping failure as a real fault:
 
-- EVPN BGP sessions
-- L2VNI Type-2 MAC routes
-- Type-3 IMET routes
-- L3VNI Type-5 prefix routes
-- Linux VRF route installation
-- bridge FDB entries
-- ARP / neighbor resolution
+```bash
+show bgp l2vpn evpn summary
+show evpn vni
+show vrf vni
+ip route show vrf tenant-a
+```
 
-A temporary `Destination Host Unreachable` from an anycast gateway can happen before the remote host MAC / neighbor / FDB state is fully learned.
-
-For validation, wait until `show vrf vni`, `ip route show vrf tenant-a`, and EVPN routes look stable before treating a ping failure as a real fault.
+A temporary `Destination Host Unreachable` can happen while EVPN routes, Linux VRF routes, bridge FDB entries, and ARP / neighbor state are still converging.
 
 ---
 
-## 16. Output Checklist
+## Output Checklist
 
 Expected output files for the completed Lab 02 validation stage:
 
 ```text
+outputs/container-status.md
 outputs/underlay-bgp-summary.md
 outputs/vtep-reachability.md
 outputs/static-vxlan-data-plane.md
@@ -987,40 +724,24 @@ outputs/four-leaf-l3vni-validation.md
 
 ---
 
-## 17. Completion Criteria
+## Completion Criteria
 
-This EVPN/VXLAN validation stage is complete when:
+Lab 02 validation is complete when:
 
-- all containers start successfully
-- all underlay eBGP sessions are established
-- VTEP loopback reachability works
+- all containers are running
+- underlay eBGP sessions are established
+- VTEP loopbacks are reachable through the underlay
 - EVPN BGP sessions are established
-- VNI `10010` and VNI `10020` are discovered as L2VNIs
-- Type-2 MAC routes are visible
+- L2VNI `10010` and `10020` are discovered
+- Type-2 MAC/IP routes are visible
 - Type-3 IMET routes are visible
-- explicit L2VNI RTs are correct
-- distributed anycast gateways work
-- same-subnet host reachability works within each L2VNI
-- cross-subnet reachability fails before L3VNI / VRF is added
-- `show vrf vni` maps `tenant-a` to L3VNI `10099`
-- EVPN Type-5 routes are visible for tenant prefixes
-- explicit L3VNI RT `65000:10099` is visible
-- hosts in VLAN 10 can reach hosts in VLAN 20
-- hosts in VLAN 20 can reach hosts in VLAN 10
+- explicit L2VNI route-targets are correct
+- anycast gateways are reachable from hosts
+- same-subnet L2VNI reachability works
+- the historical pre-L3VNI cross-subnet failure is documented
+- `tenant-a` maps to L3VNI `10099`
+- EVPN Type-5 tenant prefix routes are visible
+- explicit L3VNI route-target `65000:10099` is visible
+- VLAN 10 hosts can reach VLAN 20 hosts
+- VLAN 20 hosts can reach VLAN 10 hosts
 - final evidence is saved in `outputs/four-leaf-l3vni-validation.md`
-
----
-
-## 18. Cleanup
-
-Destroy the lab:
-
-```bash
-sudo containerlab destroy -t topology.clab.yml
-```
-
-Destroy and remove runtime files if needed:
-
-```bash
-sudo containerlab destroy -t topology.clab.yml --cleanup
-```
