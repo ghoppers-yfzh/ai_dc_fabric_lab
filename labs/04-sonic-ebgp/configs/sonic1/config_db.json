@@ -1,0 +1,16 @@
+{
+  "PORT": {
+    "Ethernet0": {
+      "admin_status": "up",
+      "mtu": "9100"
+    }
+  },
+  "INTERFACE": {
+    "Ethernet0": {},
+    "Ethernet0|10.0.12.1/30": {}
+  },
+  "LOOPBACK_INTERFACE": {
+    "Loopback0": {},
+    "Loopback0|10.255.0.1/32": {}
+  }
+}

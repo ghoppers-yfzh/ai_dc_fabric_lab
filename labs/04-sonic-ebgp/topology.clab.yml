@@ -1,0 +1,28 @@
+name: 04-sonic-ebgp
+
+
+topology:
+  kinds:
+    sonic-vs:
+      image: docker-sonic-vs:latest
+
+  nodes:
+    sonic1:
+      kind: sonic-vs
+      binds:
+        - configs/common/daemons:/etc/frr/daemons
+        - configs/sonic1:/sonic/config
+      exec:
+        - ip link set eth1 up 
+
+    sonic2:
+      kind: sonic-vs
+      binds:
+        - configs/common/daemons:/etc/frr/daemons
+        - configs/sonic2:/sonic/config
+      exec:
+        - ip link set eth1 up 
+
+
+  links:
+    - endpoints: ["sonic1:eth1", "sonic2:eth1"]
