@@ -140,16 +140,6 @@ Existing document:
 docs/02-sonic-containerlab-basics.md
 ```
 
-Recommended update:
-
-Change the old `03a/03b/03c` future direction to the current numbered lab structure:
-
-```text
-03-sonic-containerlab
-04-sonic-ebgp
-05-sonic-leaf-spine-ebgp
-06-sonic-automation
-```
 
 ---
 

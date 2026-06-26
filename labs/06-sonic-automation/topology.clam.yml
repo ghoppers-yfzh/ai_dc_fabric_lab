@@ -1,0 +1,50 @@
+name: 06-sonic-automation
+
+
+topology:
+  kinds:
+    sonic-vs:
+      image: docker-sonic-vs:latest
+
+  nodes:
+    spine1:
+      kind: sonic-vs
+      binds:
+        - configs/common/daemons:/etc/frr/daemons
+        - configs/spine1:/sonic/config
+      exec:
+        - ip link set eth1 up
+        - ip link set eth2 up
+
+    spine2:
+      kind: sonic-vs
+      binds:
+        - configs/common/daemons:/etc/frr/daemons
+        - configs/spine2:/sonic/config
+      exec:
+        - ip link set eth1 up
+        - ip link set eth2 up
+
+    leaf1:
+      kind: sonic-vs
+      binds:
+        - configs/common/daemons:/etc/frr/daemons
+        - configs/leaf1:/sonic/config
+      exec:
+        - ip link set eth1 up
+        - ip link set eth2 up
+
+    leaf2:
+      kind: sonic-vs
+      binds:
+        - configs/common/daemons:/etc/frr/daemons
+        - configs/leaf2:/sonic/config
+      exec:
+        - ip link set eth1 up
+        - ip link set eth2 up
+
+  links:
+    - endpoints: ["spine1:eth1", "leaf1:eth1"]
+    - endpoints: ["spine2:eth1", "leaf1:eth2"]
+    - endpoints: ["spine1:eth2", "leaf2:eth1"]
+    - endpoints: ["spine2:eth2", "leaf2:eth2"]

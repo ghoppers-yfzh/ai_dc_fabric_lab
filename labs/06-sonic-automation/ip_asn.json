@@ -1,0 +1,49 @@
+[
+    {
+    "node": "spine1",
+    "parameters": {
+        "loopback": "10.255.0.1",
+        "links": [
+            {"port": "eth1", "local_ip": "10.0.11.0/31", "peer": "leaf1", "peer_ip": "10.0.11.1/31"},
+            {"port": "eth2", "local_ip": "10.0.21.0/31", "peer": "leaf2", "peer_ip": "10.0.21.1/31"}
+        ],
+        "asn": "65001"
+    }
+},
+
+    {
+    "node": "spine2",
+    "parameters": {
+        "loopback": "10.255.0.2",
+        "links": [
+            {"port": "eth1", "local_ip": "10.0.12.0/31", "peer": "leaf1", "peer_ip": "10.0.12.1/31"},
+            {"port": "eth2", "local_ip": "10.0.22.0/31", "peer": "leaf2", "peer_ip": "10.0.22.1/31"}
+        ],
+        "asn": "65002"
+    }
+},
+
+    {
+    "node": "leaf1",
+    "parameters": {
+        "loopback": "10.255.0.11",
+        "links": [
+            {"port": "eth1", "local_ip": "10.0.11.1/31", "peer": "spine1", "peer_ip": "10.0.11.0/31"},
+            {"port": "eth2", "local_ip": "10.0.12.1/31", "peer": "spine2", "peer_ip": "10.0.12.0/31"}
+        ],
+        "asn": "65101"
+    }
+},
+
+    {
+    "node": "leaf2",
+    "parameters": {
+        "loopback": "10.255.0.12",
+        "links": [
+            {"port": "eth1", "local_ip": "10.0.21.1/31", "peer": "spine1", "peer_ip": "10.0.21.0/31"},
+            {"port": "eth2", "local_ip": "10.0.22.1/31", "peer": "spine2", "peer_ip": "10.0.22.0/31"}
+        ],
+        "asn": "65102"
+    }
+}
+]
