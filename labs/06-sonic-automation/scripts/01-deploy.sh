@@ -1,5 +1,5 @@
 #! /bin/bash
 
-containerlab destroy -t topology.clam.yml --cleanup
+containerlab destroy -t topology.clab.yml --cleanup
 sleep 5
-containerlab deploy -t topology.clam.yml
+containerlab deploy -t topology.clab.yml
