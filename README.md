@@ -65,19 +65,6 @@ Immediate focus areas:
 5. Explore NVIDIA Air / Cumulus Linux when ready.
 ```
 
-Recommended next documents:
-
-```text
-docs/09-infiniband-vs-ethernet-notes.md
-docs/10-ai-fabric-telemetry-and-validation-notes.md
-```
-
-Recommended next lab direction:
-
-```text
-NVIDIA Air / Cumulus Linux exploration notes
-```
-
 ## Repository Structure
 
 ```text
@@ -101,6 +88,9 @@ ai-dc-fabric-lab/
 │   ├── 04-sonic-ebgp/
 │   ├── 05-sonic-leaf-spine-ebgp/
 │   └── 06-sonic-automation/
+│   └── 07-sonic-validation-checks/
+│   └── 08-linux-ecn-queue-marking/
+│   └── 09-ai-workload-traffic-patterns/
 ├── diagrams/
 ├── scripts/
 └── ansible/
@@ -270,99 +260,6 @@ ping -I <local-loopback-ip> <remote-loopback-ip>
 
 Without an explicit source IP, Linux may choose a point-to-point link IP as the source. If the remote node does not have a return route to that link subnet, the ping can fail even when the remote loopback route exists.
 
-## Documentation Entry Points
-
-Start with:
-
-```text
-docs/00-master-learning-roadmap.md
-docs/06-reading-plan-lab00-to-lab06.md
-docs/07-lessons-learned.md
-```
-
-Fabric foundation notes:
-
-```text
-docs/03-frr-ebgp-underlay-notes.md
-docs/01-evpn-vxlan-design.md
-```
-
-SONiC notes:
-
-```text
-docs/02-sonic-containerlab-basics.md
-docs/04-sonic-runtime-and-bgp-notes.md
-```
-
-AI fabric notes:
-
-```text
-docs/05-ai-fabric-requirements-notes.md
-docs/08-rocev2-lossless-ethernet-notes.md
-```
-
-## Quick Start
-
-### Platform validation
-
-```bash
-cd labs/00-platform-validation
-
-sudo containerlab deploy -t alpine-smoke-test.clab.yml
-sudo containerlab inspect -t alpine-smoke-test.clab.yml
-sudo containerlab destroy -t alpine-smoke-test.clab.yml --cleanup
-
-sudo containerlab deploy -t frr-smoke-test.clab.yml
-docker exec -it clab-frr-mini-test-r1 vtysh
-sudo containerlab destroy -t frr-smoke-test.clab.yml --cleanup
-```
-
-### FRR leaf-spine lab
-
-```bash
-cd labs/01-frr-leaf-spine
-
-sudo containerlab deploy -t topology.clab.yml
-sudo containerlab inspect -t topology.clab.yml
-sudo containerlab destroy -t topology.clab.yml --cleanup
-```
-
-### SONiC validation automation lab
-
-```bash
-cd labs/06-sonic-automation
-
-bash scripts/01-deploy.sh
-bash scripts/02-load-configdb.sh
-bash scripts/03-prepare-runtime.sh
-bash scripts/04-load-bgp.sh
-bash scripts/05-validation-underlay.sh
-```
-
-## Validation Philosophy
-
-A lab is not complete just because the topology starts.
-
-Each lab should answer:
-
-```text
-What was built?
-What was validated?
-What evidence was saved?
-What failed during the process?
-What does this lab not prove?
-```
-
-Validation should separate:
-
-```text
-interface state
-direct link reachability
-control-plane session state
-route learning
-end-to-end data-plane reachability
-failure behavior
-```
 
 ## AI Fabric Learning Boundary
 
@@ -373,31 +270,4 @@ The current virtual labs are useful for:
 - EVPN/VXLAN concepts
 - SONiC operational workflow
 - repeatable validation
-- troubleshooting discipline
 
-The current virtual labs do not prove:
-
-- ASIC buffer behavior
-- hardware forwarding performance
-- RoCEv2 performance
-- PFC pause behavior
-- ECN threshold behavior
-- DCQCN sender reaction
-- NIC-level RoCE counters
-- real GPU collective workload behavior
-
-These limitations should be documented clearly. They make the project more credible, not weaker.
-
-## Suggested Next Steps
-
-Recommended next steps:
-
-```text
-1. Keep Lab 06 documentation and outputs clean.
-2. Add docs/09-infiniband-vs-ethernet-notes.md.
-3. Add docs/10-ai-fabric-telemetry-and-validation-notes.md.
-4. Explore NVIDIA Air / Cumulus Linux and document observations.
-5. Later, add CI-friendly validation with pass/fail summaries.
-```
-
-Do not rush into vendor tuning knobs before the underlying traffic, congestion, and telemetry concepts are clear.
