@@ -48,9 +48,9 @@ Don't run both NVUE and linux commands to config switch
 
 # NVUE workflow
 
-1. Use the 'nv set/unset' cmd to stage or remove config change
-2. Use the 'nv config diff' cmd to review staged changes
-3. Use the 'nv config apply' or 'nv config detach' cmd to commit or detach staged changes
+1. Use the `nv set/unset` cmd to stage or remove config change
+2. Use the `nv config diff` cmd to review staged changes
+3. Use the `nv config apply` or `nv config detach` cmd to commit or detach staged changes
 
 Commands:
 '''
