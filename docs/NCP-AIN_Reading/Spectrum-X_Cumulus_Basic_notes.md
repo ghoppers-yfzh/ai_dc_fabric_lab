@@ -1,4 +1,5 @@
-# Cumulus Basics
+# Cumulus Basic
+## Image
 cumulus-linux-5.x.y-mlx-amd64
 - 5: major release
 - x: minor release
