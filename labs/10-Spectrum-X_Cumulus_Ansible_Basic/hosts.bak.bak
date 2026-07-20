@@ -1,0 +1,17 @@
+[spine_sw]
+spine01 ansible_host=192.168.200.2
+spine02 ansible_host=192.168.200.3
+spine03 ansible_host=192.168.200.4
+spine04 ansible_host=192.168.200.5
+
+[leaf_sw]
+leaf01 ansible_host=192.168.200.6 vlan99_ip=10.99.0.6/32
+leaf02 ansible_host=192.168.200.7 vlan99_ip=10.99.0.7/32
+leaf03 ansible_host=192.168.200.8 vlan99_ip=10.99.0.8/32
+leaf04 ansible_host=192.168.200.9 vlan99_ip=10.99.0.9/32
+
+[all:vars]
+ansible_user=cumulus
+ansible_password=Cumu1usLinux!
+ansible_port=22
+ansible_python_interpreter=/usr/bin/python3

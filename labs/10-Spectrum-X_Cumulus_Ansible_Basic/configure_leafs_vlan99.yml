@@ -1,0 +1,38 @@
+---
+- name: Configure VLAN 99 on leaf switches
+  hosts: leaf_sw
+  gather_facts: false
+  serial: 1
+
+  collections:
+    - nvidia.nvue
+
+  tasks:
+    - name: Display intended configuration
+      ansible.builtin.debug:
+        msg:
+          - "Device: {{ inventory_hostname }}"
+          - "Management IP: {{ ansible_host }}"
+          - "VLAN 99 IP: {{ vlan99_ip }}"
+
+    - name: Configure VLAN 99
+      nvidia.nvue.command:
+        template: |
+          set bridge domain br_default vlan 99
+          set interface vlan99 ip address {{ vlan99_ip }}
+          set interface vlan99 description 'Configured by Ansible on {{ inventory_hostname }}'
+        apply: true
+        assume_yes: true
+
+    - name: Query VLAN 99 interface
+      nvidia.nvue.command:
+        commands:
+          - "show interface vlan99 ipv4"
+        apply: false
+      register: vlan99_output
+
+    - name: Display VLAN 99 result
+      ansible.builtin.debug:
+        msg:
+          - "Device: {{ inventory_hostname }}"
+          - "{{ vlan99_output['message'] }}"

@@ -1,0 +1,39 @@
+---
+- name: Remove VLAN 99 from leaf switches
+  hosts: leaf_sw
+  gather_facts: false
+  serial: 1
+
+  collections:
+    - nvidia.nvue
+
+  tasks:
+    - name: Remove VLAN 99 SVI and bridge VLAN
+      nvidia.nvue.command:
+        commands:
+          - "unset interface vlan99"
+          - "unset bridge domain br_default vlan 99"
+        apply: true
+        assume_yes: true
+
+    - name: Query bridge VLANs
+      nvidia.nvue.command:
+        commands:
+          - "show bridge domain br_default vlan"
+        apply: false
+      register: bridge_output
+
+    - name: Check vlan99 Linux interface
+      ansible.builtin.command:
+        cmd: ip link show vlan99
+      register: vlan99_check
+      changed_when: false
+      failed_when: false
+
+    - name: Display rollback result
+      ansible.builtin.debug:
+        msg:
+          - "Device: {{ inventory_hostname }}"
+          - "{{ bridge_output['message'] }}"
+          - "vlan99 check return code: {{ vlan99_check.rc }}"
+          - "{{ vlan99_check.stderr | default('') }}"

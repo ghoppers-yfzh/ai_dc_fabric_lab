@@ -1,0 +1,37 @@
+---
+- name: Configure VLAN 100 on leaf01
+  hosts: leaf01
+  gather_facts: false
+
+  collections:
+    - nvidia.nvue
+
+  tasks:
+    - name: Create VLAN 100 and its SVI
+      nvidia.nvue.command:
+        commands:
+          - "set bridge domain br_default vlan 100"
+          - "set interface vlan100 ip address 100.100.100.100/24"
+          - "set interface vlan100 description 'Configured by Ansible lab'"
+        apply: true
+        assume_yes: true
+
+    - name: Query VLAN 100 interface
+      nvidia.nvue.command:
+        commands:
+          - "show interface vlan100"
+        apply: false
+      register: interface_output
+
+    - name: Query bridge VLANs
+      nvidia.nvue.command:
+        commands:
+          - "show bridge domain br_default vlan"
+        apply: false
+      register: vlan_output
+
+    - name: Display verification results
+      ansible.builtin.debug:
+        msg:
+          - "{{ interface_output['message'] }}"
+          - "{{ vlan_output['message'] }}"

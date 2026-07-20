@@ -1,0 +1,22 @@
+---
+- name: Inspect VLANs on all leaf switches
+  hosts: leaf_sw
+  gather_facts: false
+
+  collections:
+    - nvidia.nvue
+
+  tasks:
+    - name: Query bridge VLANs
+      nvidia.nvue.command:
+        commands:
+          - "show bridge domain br_default vlan"
+        apply: false
+      register: vlan_output
+
+    - name: Display bridge VLANs
+      ansible.builtin.debug:
+        msg:
+          - "Device: {{ inventory_hostname }}"
+          - "Management IP: {{ ansible_host }}"
+          - "{{ vlan_output['message'] }}"

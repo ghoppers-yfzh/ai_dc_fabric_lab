@@ -1,0 +1,5 @@
+---
+ansible_user: cumulus
+ansible_password: Cumu1usLinux!
+ansible_port: 22
+ansible_python_interpreter: /usr/bin/python3

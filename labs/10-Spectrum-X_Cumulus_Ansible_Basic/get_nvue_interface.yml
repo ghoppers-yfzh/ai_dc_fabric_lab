@@ -1,0 +1,19 @@
+---
+- name: Read interface information from leaf01
+  hosts: leaf01
+  gather_facts: false
+
+  collections:
+    - nvidia.nvue
+
+  tasks:
+    - name: Query all interfaces
+      nvidia.nvue.command:
+        commands:
+          - "show interface"
+        apply: false
+      register: nvue_output
+
+    - name: Display interface information
+      ansible.builtin.debug:
+        msg: "{{ nvue_output['message'] }}"

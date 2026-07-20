@@ -1,0 +1,37 @@
+---
+- name: Remove VLAN 100 from leaf01
+  hosts: leaf01
+  gather_facts: false
+
+  collections:
+    - nvidia.nvue
+
+  tasks:
+    - name: Remove VLAN 100 SVI and bridge VLAN
+      nvidia.nvue.command:
+        commands:
+          - "unset interface vlan100"
+          - "unset bridge domain br_default vlan 100"
+        apply: true
+        assume_yes: true
+
+    - name: Query bridge VLANs after rollback
+      nvidia.nvue.command:
+        commands:
+          - "show bridge domain br_default vlan"
+        apply: false
+      register: vlan_output
+
+    - name: Check whether vlan100 Linux interface still exists
+      ansible.builtin.command:
+        cmd: ip link show vlan100
+      register: vlan100_check
+      changed_when: false
+      failed_when: false
+
+    - name: Display rollback results
+      ansible.builtin.debug:
+        msg:
+          - "{{ vlan_output['message'] }}"
+          - "ip link return code: {{ vlan100_check.rc }}"
+          - "{{ vlan100_check.stderr | default('') }}"

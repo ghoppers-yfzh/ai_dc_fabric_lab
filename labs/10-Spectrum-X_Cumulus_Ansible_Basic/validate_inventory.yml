@@ -1,0 +1,33 @@
+---
+- name: Validate inventory against actual devices
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Read device hostname
+      ansible.builtin.command:
+        cmd: hostname
+      register: hostname_result
+      changed_when: false
+
+    - name: Read management interface address
+      ansible.builtin.command:
+        cmd: ip -4 -brief address show eth0
+      register: management_result
+      changed_when: false
+
+    - name: Validate hostname and management address
+      ansible.builtin.assert:
+        that:
+          - hostname_result.stdout == inventory_hostname
+          - ansible_host in management_result.stdout
+        success_msg: >-
+          {{ inventory_hostname }} passed:
+          hostname={{ hostname_result.stdout }},
+          management={{ ansible_host }}
+        fail_msg: >-
+          {{ inventory_hostname }} failed:
+          actual hostname={{ hostname_result.stdout }},
+          expected hostname={{ inventory_hostname }},
+          expected management IP={{ ansible_host }},
+          actual interface={{ management_result.stdout }}

@@ -1,0 +1,22 @@
+---
+- name: Verify VLAN 99 on leaf switches
+  hosts: leaf_sw
+  gather_facts: false
+
+  collections:
+    - nvidia.nvue
+
+  tasks:
+    - name: Query VLAN 99 IPv4 configuration
+      nvidia.nvue.command:
+        commands:
+          - "show interface vlan99 ipv4"
+        apply: false
+      register: vlan99_output
+
+    - name: Display expected and actual configuration
+      ansible.builtin.debug:
+        msg:
+          - "Device: {{ inventory_hostname }}"
+          - "Expected address: {{ vlan99_ip }}"
+          - "{{ vlan99_output['message'] }}"
