@@ -1,0 +1,11 @@
+---
+- name: Configure VLAN 99 on leaf switches
+  hosts: leaf_sw
+  gather_facts: false
+  serial: 1
+
+  roles:
+    - role: cumulus_vlan_svi
+      vars:
+        vlan_id: 99
+        vlan_svi_ip: "{{ vlan99_ip }}"

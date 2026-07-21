@@ -1,0 +1,10 @@
+---
+- name: Inspect Cumulus Linux leaf switches
+  hosts: leaf_sw
+  gather_facts: false
+
+  vars:
+    inspect_command: "show bridge domain br_default vlan"
+
+  roles:
+    - role: cumulus_inspect

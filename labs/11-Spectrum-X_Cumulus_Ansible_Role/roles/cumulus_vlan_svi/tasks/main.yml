@@ -1,0 +1,57 @@
+---
+- name: Validate VLAN SVI input variables
+  ansible.builtin.assert:
+    that:
+      - vlan_id | int >= 1
+      - vlan_id | int <= 4094
+      - vlan_svi_ip is defined
+      - vlan_svi_ip | length > 0
+    fail_msg: >-
+      Invalid VLAN SVI variables on {{ inventory_hostname }}:
+      vlan_id={{ vlan_id | default('undefined') }},
+      vlan_svi_ip={{ vlan_svi_ip | default('undefined') }}
+    success_msg: >-
+      VLAN {{ vlan_id }} variables validated for {{ inventory_hostname }}
+
+- name: Display intended VLAN SVI configuration
+  ansible.builtin.debug:
+    msg:
+      - "Device: {{ inventory_hostname }}"
+      - "Management IP: {{ ansible_host }}"
+      - "VLAN ID: {{ vlan_id }}"
+      - "SVI name: {{ vlan_svi_name }}"
+      - "SVI address: {{ vlan_svi_ip }}"
+      - "Description: {{ vlan_svi_description }}"
+
+- name: Configure VLAN and SVI with NVUE
+  nvidia.nvue.command:
+    template: |
+      set bridge domain br_default vlan {{ vlan_id }}
+      set interface {{ vlan_svi_name }} ip address {{ vlan_svi_ip }}
+      set interface {{ vlan_svi_name }} description '{{ vlan_svi_description }}'
+    apply: true
+    assume_yes: true
+
+- name: Query VLAN SVI IPv4 configuration
+  nvidia.nvue.command:
+    commands:
+      - "show interface {{ vlan_svi_name }} ipv4"
+    apply: false
+  register: vlan_svi_output
+
+- name: Validate applied VLAN SVI address
+  ansible.builtin.assert:
+    that:
+      - vlan_svi_ip in vlan_svi_output['message']
+    success_msg: >-
+      VLAN {{ vlan_id }} SVI address {{ vlan_svi_ip }}
+      is operational on {{ inventory_hostname }}
+    fail_msg: >-
+      Expected address {{ vlan_svi_ip }} was not found on
+      {{ inventory_hostname }} interface {{ vlan_svi_name }}
+
+- name: Display VLAN SVI result
+  ansible.builtin.debug:
+    msg:
+      - "Device: {{ inventory_hostname }}"
+      - "{{ vlan_svi_output['message'] }}"

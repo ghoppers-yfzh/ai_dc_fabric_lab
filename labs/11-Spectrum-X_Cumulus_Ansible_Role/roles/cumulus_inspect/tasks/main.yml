@@ -1,0 +1,27 @@
+---
+- name: Validate inspection command
+  ansible.builtin.assert:
+    that:
+      - inspect_command is string
+      - inspect_command | length > 0
+    fail_msg: >-
+      inspect_command must be a non-empty string on
+      {{ inventory_hostname }}
+    success_msg: >-
+      Inspection command validated for
+      {{ inventory_hostname }}
+
+- name: Run read-only NVUE inspection command
+  nvidia.nvue.command:
+    commands:
+      - "{{ inspect_command }}"
+    apply: false
+  register: inspect_result
+
+- name: Display inspection result
+  ansible.builtin.debug:
+    msg:
+      - "Device: {{ inventory_hostname }}"
+      - "Management IP: {{ ansible_host }}"
+      - "Command: nv {{ inspect_command }}"
+      - "{{ inspect_result['message'] }}"

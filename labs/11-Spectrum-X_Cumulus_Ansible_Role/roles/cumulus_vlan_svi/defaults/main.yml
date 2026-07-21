@@ -1,0 +1,4 @@
+---
+vlan_id: 99
+vlan_svi_name: "vlan{{ vlan_id }}"
+vlan_svi_description: "Configured by Ansible role on {{ inventory_hostname }}"
