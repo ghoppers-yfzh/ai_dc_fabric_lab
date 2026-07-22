@@ -1,0 +1,10 @@
+---
+- name: Change DNS servers on spine switches
+  hosts: spine_sw
+  become: true
+  gather_facts: false
+
+  roles:
+    - role: change_dns
+      tags:
+        - change_dns

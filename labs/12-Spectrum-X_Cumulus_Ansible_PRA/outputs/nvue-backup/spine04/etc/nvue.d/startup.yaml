@@ -1,0 +1,222 @@
+- header:
+    model: vx
+    nvue-api-version: nvue_v1
+    rev-id: 1.0
+    version: Cumulus Linux 5.16.1
+- set:
+    evpn:
+      state: enabled
+    interface:
+      eth0:
+        ipv4:
+          dhcp-client:
+            set-hostname: enabled
+            state: enabled
+        type: eth
+        vrf: mgmt
+      lo:
+        ipv4:
+          address:
+            10.10.10.104/32: {}
+        type: loopback
+      swp1:
+        link:
+          state:
+            up: {}
+        type: swp
+      swp2:
+        link:
+          state:
+            up: {}
+        type: swp
+      swp3:
+        link:
+          state:
+            up: {}
+        type: swp
+      swp4:
+        link:
+          state:
+            up: {}
+        type: swp
+      swp5:
+        link:
+          state:
+            up: {}
+        type: swp
+      swp6:
+        link:
+          state:
+            up: {}
+        type: swp
+    nve:
+      vxlan:
+        state: enabled
+    router:
+      bfd:
+        profile:
+          bgp-underlay-bfd:
+            detect-multiplier: 3
+            min-rx-interval: 300
+            min-tx-interval: 300
+        state: enabled
+      bgp:
+        graceful-restart:
+          mode: helper-only
+        state: enabled
+    system:
+      aaa:
+        class:
+          nvapply:
+            action: allow
+            command-path:
+              /:
+                permission: all
+          nvshow:
+            action: allow
+            command-path:
+              /:
+                permission: ro
+          sudo:
+            action: allow
+            command-path:
+              /:
+                permission: all
+        role:
+          nvue-admin:
+            class:
+              nvapply: {}
+          nvue-monitor:
+            class:
+              nvshow: {}
+          system-admin:
+            class:
+              nvapply: {}
+              sudo: {}
+        user:
+          cumulus:
+            full-name: cumulus
+            hashed-password: $5$.bZqNaSoq2PqQPCV$LKR8zu5u7whr1F8YRLYtOrO7NaF9kE7EEHw.ER3ylO4
+            role: system-admin
+      api:
+        state: enabled
+      config:
+        auto-save:
+          state: enabled
+      control-plane:
+        acl:
+          acl-default-dos:
+            inbound: {}
+          acl-default-whitelist:
+            inbound: {}
+      date-time:
+        timezone: Etc/UTC
+      dns:
+        server:
+          1.1.1.1:
+            vrf: mgmt
+          8.8.8.8:
+            vrf: mgmt
+      docker:
+        state: enabled
+        vrf: mgmt
+      hostname: spine04
+      message:
+        post-login: "######################################################################################\
+          \ \n#                     You are successfully logged in to: spine04   \
+          \                  # \n######################################################################################"
+        pre-login: "######################################################################################\
+          \ \n#  Welcome to NVIDIA Cumulus VX (TM) 5.16.0                        \
+          \                     # \n#  NVIDIA Cumulus VX (TM) is a community supported\
+          \ virtual appliance designed        # \n#  for experiencing, testing and\
+          \ prototyping NVIDIA Cumulus' latest technology.      # \n#  For any questions\
+          \ or technical support, visit our community site at:              # \n#\
+          \  https://www.nvidia.com/en-us/support                                \
+          \              # \n######################################################################################"
+      ntp:
+        server:
+          0.cumulusnetworks.pool.ntp.org:
+            iburst: enabled
+          1.cumulusnetworks.pool.ntp.org:
+            iburst: enabled
+          2.cumulusnetworks.pool.ntp.org:
+            iburst: enabled
+          3.cumulusnetworks.pool.ntp.org:
+            iburst: enabled
+        vrf: mgmt
+      snmp-server:
+        listening-address:
+          all:
+            vrf: mgmt
+          all-v6:
+            vrf: mgmt
+        readonly-community:
+          $nvsec$9cb7a999fcb470bcd67cf6b040983cbc:
+            access:
+              any: {}
+        state: enabled
+        system-location: evpn_centralized
+      ssh-server:
+        state: enabled
+      syslog:
+        server:
+          192.168.200.1:
+            vrf: mgmt
+      wjh:
+        channel:
+          forwarding:
+            trigger:
+              l2: {}
+              l3: {}
+              tunnel: {}
+        state: enabled
+    vrf:
+      default:
+        router:
+          bgp:
+            address-family:
+              ipv4-unicast:
+                redistribute:
+                  connected:
+                    state: enabled
+                state: enabled
+              l2vpn-evpn:
+                state: enabled
+            autonomous-system: 65100
+            neighbor:
+              swp1:
+                peer-group: underlay
+                type: unnumbered
+              swp2:
+                peer-group: underlay
+                type: unnumbered
+              swp3:
+                peer-group: underlay
+                type: unnumbered
+              swp4:
+                peer-group: underlay
+                type: unnumbered
+              swp5:
+                peer-group: underlay
+                type: unnumbered
+              swp6:
+                peer-group: underlay
+                type: unnumbered
+            peer-group:
+              underlay:
+                address-family:
+                  l2vpn-evpn:
+                    state: enabled
+                bfd:
+                  profile: bgp-underlay-bfd
+                remote-as: external
+            router-id: 10.10.10.104
+            state: enabled
+      mgmt:
+        router:
+          static:
+            0.0.0.0/0:
+              address-family: ipv4-unicast
+              via:
+                192.168.200.1:
+                  type: ipv4-address

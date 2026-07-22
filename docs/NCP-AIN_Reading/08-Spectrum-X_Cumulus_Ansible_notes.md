@@ -354,3 +354,49 @@ Production Ready Automation
 
 Use Ansible roles + playbooks to deploy DC network. From topology, config, deployment and validation.
 
+PRA logical structure
+```
+Git Repository
+│
+├── inventory
+│   └── Device and group
+│
+├── group_vars / host_vars
+│   └── group and host variables
+│
+├── roles
+│   └── Reusable functions for hostname、DNS、FRR、interfaces、SNMP .etc
+│
+├── templates
+│   └── for generating config
+│
+├── playbooks
+│
+├── backup / restore
+│
+└── validation / CI
+```
+
+Data flow
+
+```
+Inventory
+    +
+group_vars / host_vars
+    ↓
+Playbook selects hosts and roles
+    ↓
+Role runs tasks
+    ↓
+Jinja2 template reads variables
+    ↓
+Generate candidate configuration
+    ↓
+Check / diff / validation
+    ↓
+Deploy to switches
+    ↓
+Handler reloads service
+    ↓
+Post-change validation
+```

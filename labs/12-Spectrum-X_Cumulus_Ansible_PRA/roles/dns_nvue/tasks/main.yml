@@ -1,0 +1,6 @@
+---
+- name: Configure DNS servers with NVUE
+  nvidia.nvue.command:
+    template: "{{ lookup('template', 'dns_commands.j2') }}"
+    apply: true
+    assume_yes: true

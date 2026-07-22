@@ -1,0 +1,9 @@
+---
+- name: Include DNS configuration role
+  ansible.builtin.include_role:
+    name: "{{ item }}"
+    apply:
+      tags:
+        - "{{ item }}"
+  loop:
+    - dns_nvue

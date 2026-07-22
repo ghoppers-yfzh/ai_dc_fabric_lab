@@ -1,0 +1,13 @@
+---
+dns:
+  vrf: mgmt
+
+  current_servers:
+    ipv4:
+      - "1.1.1.1"
+      - "8.8.8.8"
+
+  desired_servers:
+    ipv4:
+      - "10.0.0.100"
+      - "10.0.0.101"

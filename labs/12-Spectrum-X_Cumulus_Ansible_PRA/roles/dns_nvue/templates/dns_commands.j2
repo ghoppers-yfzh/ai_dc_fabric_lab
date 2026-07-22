@@ -1,0 +1,6 @@
+{% for server in dns.current_servers.ipv4 %}
+unset system dns server {{ server }}
+{% endfor %}
+{% for server in dns.desired_servers.ipv4 %}
+set system dns server {{ server }} vrf {{ dns.vrf }}
+{% endfor %}

@@ -1,0 +1,33 @@
+---
+- name: Preview rollback NVUE DNS commands
+  hosts: spine_sw
+  gather_facts: false
+
+  vars:
+    dns:
+      vrf: mgmt
+
+      current_servers:
+        ipv4:
+          - "10.0.0.100"
+          - "10.0.0.101"
+
+      desired_servers:
+        ipv4:
+          - "1.1.1.1"
+          - "8.8.8.8"
+
+  tasks:
+    - name: Render rollback DNS commands
+      ansible.builtin.set_fact:
+        rendered_dns_commands: >-
+          {{
+            lookup(
+              'ansible.builtin.template',
+              playbook_dir + '/../roles/dns_nvue/templates/dns_commands.j2'
+            )
+          }}
+
+    - name: Display rollback DNS commands
+      ansible.builtin.debug:
+        var: rendered_dns_commands

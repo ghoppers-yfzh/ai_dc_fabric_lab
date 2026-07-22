@@ -1,0 +1,19 @@
+---
+- name: Preview generated NVUE DNS commands
+  hosts: spine_sw
+  gather_facts: false
+
+  tasks:
+    - name: Render DNS command template
+      ansible.builtin.set_fact:
+        rendered_dns_commands: >-
+          {{
+            lookup(
+              'ansible.builtin.template',
+              playbook_dir + '/../roles/dns_nvue/templates/dns_commands.j2'
+            )
+          }}
+
+    - name: Display generated NVUE commands
+      ansible.builtin.debug:
+        var: rendered_dns_commands

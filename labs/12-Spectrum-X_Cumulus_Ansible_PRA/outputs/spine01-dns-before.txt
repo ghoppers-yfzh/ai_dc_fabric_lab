@@ -1,0 +1,5 @@
+spine01 | CHANGED | rc=0 >>
+DNS Server  priority  VRF 
+----------  --------  ----
+1.1.1.1               mgmt
+8.8.8.8               mgmt
